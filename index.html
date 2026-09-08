@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Scriptura — Video to Published Book & Highlight Reel Studio</title>
+  <meta name="description" content="Transform raw video/audio recordings into timestamped transcripts, stitched video highlight reels with transitions, and publication-ready book manuscripts.">
+  
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700;800&family=JetBrains+Mono:wght@400;500;600&family=Lora:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  
+  <!-- CSS Stylesheets -->
+  <link rel="stylesheet" href="css/main.css">
+  <link rel="stylesheet" href="css/editor.css">
+  <link rel="stylesheet" href="css/book-preview.css">
+</head>
+<body>
+
+  <!-- Top App Header -->
+  <header class="app-header">
+    <div class="logo-container">
+      <div class="logo-icon">📜</div>
+      <div class="logo-text">
+        <h1>SCRIPTURA</h1>
+        <p>Video to Book & Highlight Studio</p>
+      </div>
+    </div>
+
+    <!-- Navigation Tabs -->
+    <nav class="nav-tabs" id="main-nav-tabs">
+      <button class="nav-tab-btn active" data-tab="studio" id="tab-btn-studio">
+        <span>🎙️</span> 1. Ingest & Transcribe
+      </button>
+      <button class="nav-tab-btn" data-tab="highlights" id="tab-btn-highlights">
+        <span>🎬</span> 2. Highlight Reels & Transitions
+      </button>
+      <button class="nav-tab-btn" data-tab="editor" id="tab-btn-editor">
+        <span>✍️</span> 3. Spoken-to-Book Editor
+      </button>
+      <button class="nav-tab-btn" data-tab="reader" id="tab-btn-reader">
+        <span>📖</span> 4. Publication Reader
+      </button>
+      <button class="nav-tab-btn" data-tab="cover" id="tab-btn-cover">
+        <span>🎨</span> 5. Cover Studio
+      </button>
+      <button class="nav-tab-btn" data-tab="services" id="tab-btn-services">
+        <span>🚀</span> Author Services Hub
+      </button>
+    </nav>
+
+    <!-- Header Actions -->
+    <div class="header-actions">
+      <button class="btn btn-outline-gold btn-sm" id="btn-export-markdown">
+        <span>📥</span> Export .MD
+      </button>
+      <button class="btn btn-primary btn-sm" id="btn-export-pdf">
+        <span>🖨️</span> Print / PDF
+      </button>
+    </div>
+  </header>
+
+  <!-- Main Content Container -->
+  <main class="app-container">
+
+    <!-- Interactive 5-Step Workflow Guide Banner -->
+    <div class="workflow-guide-bar">
+      <div class="guide-step-card active" data-target-tab="studio">
+        <div class="step-num-badge">1</div>
+        <div>
+          <div class="step-info-title">Ingest & Transcribe</div>
+          <div class="step-info-desc">Upload media or test preloaded transcript</div>
+        </div>
+      </div>
+
+      <div class="guide-step-card" data-target-tab="highlights">
+        <div class="step-num-badge">2</div>
+        <div>
+          <div class="step-info-title">Select Highlights & Transitions</div>
+          <div class="step-info-desc">Clip moments, pick transitions, merge video</div>
+        </div>
+      </div>
+
+      <div class="guide-step-card" data-target-tab="editor">
+        <div class="step-num-badge">3</div>
+        <div>
+          <div class="step-info-title">Spoken-to-Book Editor</div>
+          <div class="step-info-desc">Clean speech into structured chapters</div>
+        </div>
+      </div>
+
+      <div class="guide-step-card" data-target-tab="reader">
+        <div class="step-num-badge">4</div>
+        <div>
+          <div class="step-info-title">Spread Reader</div>
+          <div class="step-info-desc">Interactive dual-page book simulation</div>
+        </div>
+      </div>
+
+      <div class="guide-step-card" data-target-tab="services">
+        <div class="step-num-badge">5</div>
+        <div>
+          <div class="step-info-title">Author Services</div>
+          <div class="step-info-desc">Audiobook, KDP, and global distribution</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 1: STUDIO (Upload & Transcribe) -->
+    <section class="tab-view active" id="tab-studio">
+      <!-- Hero Banner -->
+      <div class="hero-banner">
+        <div class="hero-content">
+          <div class="badge-tag">⚡ GPU-Accelerated Local Engine</div>
+          <h2 class="hero-title">From Spoken Lectures to Books & Highlight Reels</h2>
+          <p class="hero-subtitle">
+            Upload your sermons, keynotes, masterclasses, or podcasts. Scriptura transcribes with millisecond timestamps, lets you select cool moments to compile video highlight reels with transitions, and structures the speech into a publishable book manuscript.
+          </p>
+          <div class="hero-stats">
+            <div class="stat-item">
+              <span class="stat-value" id="transcript-segment-count">801 segments</span>
+              <span class="stat-label">Active Transcripts</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-value">1h 34m</span>
+              <span class="stat-label">Preloaded Discourse</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-value">5 Chapters</span>
+              <span class="stat-label">Structured Manuscript</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Studio Grid -->
+      <div class="studio-grid">
+        <!-- Upload & Player Column -->
+        <div class="studio-left-col">
+          <div class="glass-card">
+            <div class="card-header">
+              <h3 class="card-title"><span>📹</span> Step 1: Media Ingestion</h3>
+              <span class="badge-tag" style="margin: 0;">MP4 / MOV / M4A / MP3</span>
+            </div>
+
+            <!-- Drag & Drop Zone -->
+            <div class="dropzone" id="media-dropzone">
+              <div class="dropzone-icon">☁️</div>
+              <div class="dropzone-text">
+                <h3>Drag & Drop Video or Audio</h3>
+                <p>or click to browse from your computer</p>
+                <input type="file" id="media-file-input" class="file-input" accept="video/*,audio/*">
+              </div>
+              <button class="btn btn-secondary btn-sm">Select Media File</button>
+            </div>
+
+            <!-- Media Player Container -->
+            <div class="media-preview-container" id="media-player-container">
+              <div style="padding: 2.5rem; text-align: center; color: var(--text-muted);">
+                <p>🎧 Preloaded Audio Recording Active</p>
+                <small style="color: var(--text-gold);">Screen Recording 2026-09-07 (1h 34m 31s)</small>
+              </div>
+            </div>
+
+            <div style="margin-top: 1.25rem; display: flex; gap: 0.75rem;">
+              <button class="btn btn-primary" id="btn-run-transcribe" style="flex: 1;">
+                <span>⚡</span> Run Full Transcription
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Timestamped Transcript Feed Column -->
+        <div class="studio-right-col">
+          <div class="glass-card">
+            <div class="card-header">
+              <div>
+                <h3 class="card-title"><span>⏱️</span> Step 2: Timestamped Transcripts</h3>
+                <small style="color: var(--text-muted);">Click <strong>🌟 +Clip</strong> on any moment to add it to your Highlight Reel</small>
+              </div>
+              <div class="transcript-header-actions">
+                <input type="text" id="transcript-search" class="search-box" placeholder="Search transcript...">
+                <button class="btn btn-secondary btn-sm" id="btn-export-srt" title="Download Subtitles">SRT</button>
+                <button class="btn btn-secondary btn-sm" id="btn-export-txt" title="Download Plain Text">TXT</button>
+              </div>
+            </div>
+
+            <!-- Transcript Scroll Feed -->
+            <div class="transcript-feed" id="transcript-feed">
+              <!-- Dynamically populated -->
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Quick Action Navigation Bar -->
+      <div class="transform-bar">
+        <div class="transform-info">
+          <h4>Next Steps: Highlights or Book Manuscript?</h4>
+          <p>You can compile your selected moments into a Video Highlight Reel or transform speech into a Book Manuscript.</p>
+        </div>
+        <div style="display: flex; gap: 0.75rem;">
+          <button class="btn btn-secondary" onclick="switchTab('highlights')">
+            <span>🎬</span> Go to Highlight Studio
+          </button>
+          <button class="btn btn-primary" id="btn-transform-action">
+            <span>✍️</span> Transform to Book Manuscript
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 2: HIGHLIGHT REELS & TRANSITIONS STUDIO (NEW) -->
+    <section class="tab-view" id="tab-highlights">
+      <div class="glass-card" style="margin-bottom: 2rem;">
+        <div class="card-header">
+          <div>
+            <h3 class="card-title"><span>🎬</span> Video Highlight Reel & Transition Studio</h3>
+            <p style="font-size: 0.88rem; color: var(--text-secondary); margin-top: 0.25rem;">
+              Select cool moments from the transcript, re-arrange clips on your storyboard timeline, pick cinematic transition effects, and merge into a stitched video with animated captions.
+            </p>
+          </div>
+          <div style="display: flex; gap: 0.75rem; align-items: center;">
+            <button class="btn btn-outline-gold btn-sm" id="btn-ai-auto-highlights">
+              <span>🤖</span> AI Auto-Detect Top 4 Moments
+            </button>
+            <button class="btn btn-secondary btn-sm" id="btn-clear-all-clips">Clear All</button>
+          </div>
+        </div>
+
+        <!-- Controls Row -->
+        <div style="display: flex; flex-wrap: wrap; gap: 1.5rem; align-items: center; padding: 1rem 0; border-bottom: 1px solid var(--border-subtle);">
+          <div style="display: flex; align-items: center; gap: 0.65rem;">
+            <label style="font-size: 0.85rem; font-weight: 600; color: var(--text-gold);">🌀 Default Transition Effect:</label>
+            <select id="transition-type-select" class="meta-input-field" style="padding: 0.35rem 0.75rem; font-size: 0.85rem;">
+              <option value="crossfade">Crossfade (Smooth Cinematic Blend)</option>
+              <option value="dip-black">Dip to Black (Dramatic Pause)</option>
+              <option value="flash">Flash / White Bloom (Energetic Highlight)</option>
+              <option value="slide">Slide Push (Dynamic Horizontal Wipe)</option>
+              <option value="zoom">Zoom Warp (Fast-Paced Reel Blur)</option>
+            </select>
+          </div>
+
+          <div style="display: flex; align-items: center; gap: 0.65rem;">
+            <label style="font-size: 0.85rem; font-weight: 600; color: #fff;">💬 Animated Captions:</label>
+            <input type="checkbox" id="toggle-reel-captions" checked style="width: 18px; height: 18px; accent-color: var(--accent-gold);">
+          </div>
+        </div>
+      </div>
+
+      <!-- Highlights Studio Grid -->
+      <div class="highlights-studio-grid">
+        <!-- Left: Storyboard Timeline -->
+        <div class="storyboard-timeline">
+          <div class="storyboard-timeline-header">
+            <div>
+              <h4 style="color: #fff; font-size: 1.05rem;">🎞️ Storyboard Clip Sequence</h4>
+              <small style="color: var(--text-muted);">Drag or click ◀ ▶ to reorder. Click transition badges to cycle effects.</small>
+            </div>
+            <div style="text-align: right;">
+              <span class="badge-tag" id="storyboard-clips-count">3 Clips</span>
+              <div style="font-size: 0.75rem; color: var(--text-gold); font-family: var(--font-mono); margin-top: 0.2rem;" id="storyboard-total-duration">0m 56s Total Duration</div>
+            </div>
+          </div>
+
+          <!-- Storyboard Cards List -->
+          <div class="storyboard-list" id="storyboard-timeline-container">
+            <!-- Dynamically populated -->
+          </div>
+        </div>
+
+        <!-- Right: Master Sequencer Player & Video Compositor -->
+        <div class="glass-card" style="display: flex; flex-direction: column; justify-content: space-between;">
+          <div>
+            <div class="card-header">
+              <h3 class="card-title"><span>📽️</span> Highlight Reel Player</h3>
+              <span class="badge-tag" style="background: rgba(16, 185, 129, 0.15); color: var(--accent-emerald); border-color: var(--accent-emerald);">Live Sequencer</span>
+            </div>
+
+            <!-- Video Player Wrapper with Transitions & Captions -->
+            <div class="reel-player-wrapper" id="reel-player-container">
+              <video id="reel-master-video" class="reel-player-video" playsinline></video>
+              
+              <!-- Transition Shading Overlay -->
+              <div class="reel-transition-overlay" id="reel-transition-fx-overlay"></div>
+              
+              <!-- Kinetic Caption Overlay -->
+              <div class="reel-caption-overlay-container" id="reel-caption-overlay">
+                <div class="kinetic-caption-bubble">
+                  “Africa is not a land of the cursed...”
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Master Reel Playback & Merge Buttons -->
+          <div style="margin-top: 1.5rem; display: flex; flex-direction: column; gap: 0.75rem;">
+            <button class="btn btn-primary" id="btn-play-highlight-reel" style="font-size: 1rem; padding: 0.85rem;">
+              <span>▶️</span> Play Highlight Sequence
+            </button>
+            <button class="btn btn-outline-gold" id="btn-merge-export-video">
+              <span>🎬</span> Merge & Export Highlight Reel (JSON / Timeline)
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 3: EDITOR (Spoken-to-Book Chapter Editor) -->
+    <section class="tab-view" id="tab-editor">
+      <div class="editor-workspace">
+        <!-- Sidebar Navigation -->
+        <aside class="chapter-sidebar">
+          <div class="chapter-sidebar-header">
+            <h4 style="font-size: 0.92rem; color: #fff;">TABLE OF CONTENTS</h4>
+            <span class="badge-tag" style="margin: 0; font-size: 0.68rem;">5 Chapters</span>
+          </div>
+          <div class="chapter-list" id="chapter-nav-list">
+            <!-- Dynamically populated -->
+          </div>
+        </aside>
+
+        <!-- Main Chapter Editor Canvas -->
+        <main class="editor-canvas">
+          <div class="editor-toolbar">
+            <div class="editor-toolbar-left">
+              <h3 style="color: #fff; font-size: 1.15rem; font-family: var(--font-display);">Manuscript Studio</h3>
+              <select id="genre-tone-select" class="meta-input-field" style="padding: 0.35rem 0.75rem; font-size: 0.82rem;">
+                <option value="Theological & Prophetic Non-Fiction">Theological & Prophetic Non-Fiction</option>
+                <option value="Masterclass & Executive Leadership">Masterclass & Executive Leadership</option>
+                <option value="Inspirational & Memoir">Inspirational & Memoir</option>
+                <option value="Academic Treatise">Academic Treatise</option>
+              </select>
+            </div>
+            <div class="editor-toolbar-right">
+              <button class="btn btn-secondary btn-sm" onclick="switchTab('reader')">
+                <span>📖</span> View Reader Spread
+              </button>
+            </div>
+          </div>
+
+          <!-- Metadata input row -->
+          <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 1rem;">
+            <div class="meta-input-group">
+              <label class="meta-input-label">Chapter Title</label>
+              <input type="text" id="editor-chapter-title" class="meta-input-field" value="Dismantling the False Curse">
+            </div>
+            <div class="meta-input-group">
+              <label class="meta-input-label">Subtitle / Focus</label>
+              <input type="text" id="editor-chapter-subtitle" class="meta-input-field" value="Genesis 9 and the Truth of Noah’s Offspring">
+            </div>
+          </div>
+
+          <div class="meta-input-group">
+            <label class="meta-input-label">Epigraph / Thematic Scripture Quote</label>
+            <input type="text" id="editor-chapter-epigraph" class="meta-input-field" value="“And he said, Cursed be Canaan; a servant of servants shall he be unto his brethren.” — Genesis 9:25">
+          </div>
+
+          <!-- Side-by-Side Split View -->
+          <div class="editor-split-view">
+            <!-- Left Pane: Raw Transcript Comparison -->
+            <div class="editor-pane">
+              <div class="pane-header">
+                <span>🎙️ RAW SPOKEN DISCOURSE</span>
+                <span style="font-family: var(--font-mono); font-size: 0.75rem;">Recorded Audio</span>
+              </div>
+              <div class="pane-content raw-transcript-view" id="editor-raw-pane">
+                <!-- Spoken text comparison -->
+              </div>
+            </div>
+
+            <!-- Right Pane: Refined Editorial Prose -->
+            <div class="editor-pane" style="border-color: var(--border-gold);">
+              <div class="pane-header" style="background: rgba(212, 175, 55, 0.1); color: var(--text-gold);">
+                <span>✍️ REFINED PUBLICATION PROSE</span>
+                <span>Editable</span>
+              </div>
+              <div class="pane-content" id="editor-prose-pane" contenteditable="true">
+                <!-- Polished prose -->
+              </div>
+            </div>
+          </div>
+        </main>
+      </div>
+    </section>
+
+    <!-- TAB 4: PUBLICATION READER (Spread Simulator) -->
+    <section class="tab-view" id="tab-reader">
+      <!-- Reader Controls -->
+      <div class="reader-controls-bar">
+        <div class="reader-theme-selector">
+          <span style="font-size: 0.82rem; color: var(--text-muted); margin-right: 0.5rem;">READER THEME:</span>
+          <button class="theme-pill-btn active" data-theme="theme-dark">Obsidian Dark</button>
+          <button class="theme-pill-btn" data-theme="theme-sepia">Vintage Sepia</button>
+          <button class="theme-pill-btn" data-theme="theme-white">Publishing Ivory</button>
+        </div>
+        <div style="display: flex; gap: 0.75rem;">
+          <button class="btn btn-secondary btn-sm" id="btn-export-json">Export JSON</button>
+          <button class="btn btn-primary btn-sm" onclick="window.print()">Print Spread</button>
+        </div>
+      </div>
+
+      <!-- Book Spread Simulation -->
+      <div class="book-spread-container">
+        <div class="book-spread theme-dark" id="interactive-book-spread">
+          <!-- Left Page -->
+          <div class="book-page book-page-left">
+            <div class="book-header-folio" id="reader-left-folio">The Prophetic Destiny of Africa</div>
+            <div class="book-content-body" id="reader-left-content">
+              <!-- Left content -->
+            </div>
+            <div class="book-footer-folio" id="reader-left-page-num">1</div>
+          </div>
+
+          <!-- Right Page -->
+          <div class="book-page book-page-right">
+            <div class="book-header-folio" id="reader-right-folio">Chapter One: Dismantling the False Curse</div>
+            <div class="book-content-body" id="reader-right-content">
+              <!-- Right content -->
+            </div>
+            <div class="book-footer-folio" id="reader-right-page-num">2</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Page Flip Controls -->
+      <div class="book-spread-nav">
+        <button class="btn btn-secondary" id="btn-prev-page">← Previous Chapter</button>
+        <span style="font-size: 0.88rem; color: var(--text-muted);">Turn Page</span>
+        <button class="btn btn-primary" id="btn-next-page">Next Chapter →</button>
+      </div>
+    </section>
+
+    <!-- TAB 5: COVER STUDIO -->
+    <section class="tab-view" id="tab-cover">
+      <div class="glass-card">
+        <div class="card-header">
+          <h3 class="card-title"><span>🎨</span> 3D Book Cover & Packaging Studio</h3>
+          <span class="badge-tag">Customizable Typography & Palettes</span>
+        </div>
+
+        <div class="cover-studio-layout">
+          <!-- 3D Book Mockup -->
+          <div class="book-cover-mockup-wrapper">
+            <div class="book-cover-3d" id="interactive-cover-3d">
+              <div class="cover-badge-text" id="cover-preview-genre">Theological & Prophetic Edition</div>
+              <div>
+                <h2 class="cover-main-title" id="cover-preview-title">The Prophetic Destiny of Africa</h2>
+                <p class="cover-subtitle-text" id="cover-preview-subtitle">Unveiling Biblical Truths, Breaking Historic Myths & Awakening Global Mission</p>
+              </div>
+              <div class="cover-author-tag" id="cover-preview-author">Dr. D. K. Mensah</div>
+            </div>
+          </div>
+
+          <!-- Customizer Controls -->
+          <div class="cover-controls-panel">
+            <h4 style="color: #fff; margin-bottom: 1rem;">Cover Aesthetics & Metadata</h4>
+            
+            <div class="meta-input-group">
+              <label class="meta-input-label">Book Title</label>
+              <input type="text" id="book-title-input" class="meta-input-field" value="The Prophetic Destiny of Africa">
+            </div>
+
+            <div class="meta-input-group">
+              <label class="meta-input-label">Author Byline</label>
+              <input type="text" id="book-author-input" class="meta-input-field" value="Dr. D. K. Mensah">
+            </div>
+
+            <div class="meta-input-group">
+              <label class="meta-input-label">Cover Palette</label>
+              <select id="cover-palette-select" class="meta-input-field">
+                <option value="gold-obsidian">Obsidian Gold (Royal & Prophetic)</option>
+                <option value="crimson-royalty">Crimson Majesty (Theology & History)</option>
+                <option value="emerald-wisdom">Emerald Renaissance (Wisdom & Stewardship)</option>
+                <option value="sapphire-depth">Sapphire Horizon (Global Mission)</option>
+              </select>
+            </div>
+
+            <div style="margin-top: 1.5rem; display: flex; gap: 0.75rem;">
+              <button class="btn btn-primary" onclick="showToast('High-resolution 300DPI print cover packaging ready for download!', 'success')">
+                <span>📐</span> Export Print-Ready Cover (PDF)
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 6: AUTHOR & PUBLISHING SERVICES HUB -->
+    <section class="tab-view" id="tab-services">
+      <div class="glass-card" style="margin-bottom: 2rem;">
+        <div class="card-header">
+          <h3 class="card-title"><span>🚀</span> Author Services & Publishing Pipeline</h3>
+          <span class="badge-tag">End-to-End Distribution</span>
+        </div>
+        <p style="color: var(--text-secondary); max-width: 800px; font-size: 0.95rem;">
+          Take your transcribed lecture from manuscript to global bestseller. Access our professional production and distribution modules below.
+        </p>
+      </div>
+
+      <!-- Services Grid -->
+      <div class="services-grid">
+        <!-- Service 1 -->
+        <div class="service-card">
+          <span class="service-badge">AI + Audio</span>
+          <div>
+            <div class="service-icon">🎙️</div>
+            <h4 class="service-title">Audiobook Narration & Voice Studio</h4>
+            <p class="service-desc">Generate a multi-voice audiobook edition using the author's cloned voice tone or studio-grade professional narrators.</p>
+            <ul class="service-features-list">
+              <li>ACX / Audible compliant mastering (192kbps MP3)</li>
+              <li>Whisper-timed chapter bookmarking</li>
+              <li>Breath-pacing & emphasis tuning</li>
+            </ul>
+          </div>
+          <button class="btn btn-outline-gold btn-sm" onclick="showToast('Audiobook production queue initiated.', 'success')">Configure Audiobook</button>
+        </div>
+
+        <!-- Service 2 -->
+        <div class="service-card">
+          <span class="service-badge">Global Reach</span>
+          <div>
+            <div class="service-icon">🌐</div>
+            <h4 class="service-title">Global Multi-Language Localization</h4>
+            <p class="service-desc">Translate your theology or lecture manuscript into French, Spanish, Portuguese, Swahili, and Arabic with theological fidelity.</p>
+            <ul class="service-features-list">
+              <li>Nuanced theological and cultural localization</li>
+              <li>Multi-lingual scripture cross-referencing</li>
+              <li>Parallel dual-language edition builder</li>
+            </ul>
+          </div>
+          <button class="btn btn-outline-gold btn-sm" onclick="showToast('Translation pipeline activated.', 'success')">Select Languages</button>
+        </div>
+
+        <!-- Service 3 -->
+        <div class="service-card">
+          <span class="service-badge">Print & Ebook</span>
+          <div>
+            <div class="service-icon">📦</div>
+            <h4 class="service-title">Amazon KDP & IngramSpark Direct Packaging</h4>
+            <p class="service-desc">Automated trim size, gutter margin, bleed formatting, and barcode generation ready for instant upload.</p>
+            <ul class="service-features-list">
+              <li>6x9" and 5.5x8.5" trade paperback templates</li>
+              <li>Mobi / KF8 & EPUB3 validation</li>
+              <li>ISBN & Copyright registration helper</li>
+            </ul>
+          </div>
+          <button class="btn btn-outline-gold btn-sm" onclick="showToast('KDP / IngramSpark package compiled!', 'success')">Generate KDP Files</button>
+        </div>
+
+        <!-- Service 4 -->
+        <div class="service-card">
+          <span class="service-badge">Social Growth</span>
+          <div>
+            <div class="service-icon">🎬</div>
+            <h4 class="service-title">Viral Video Shorts & Quote Cards</h4>
+            <p class="service-desc">Extract the most impactful 30-second sermon clips with animated kinetic typography for TikTok, Instagram Reels, and YouTube Shorts.</p>
+            <ul class="service-features-list">
+              <li>Auto-highlight detection from key quote timestamps</li>
+              <li>Vertical 9:16 aspect ratio framing</li>
+              <li>Custom branded social quote cards</li>
+            </ul>
+          </div>
+          <button class="btn btn-outline-gold btn-sm" onclick="showToast('Generating 5 video shorts from top quotes...', 'info')">Extract Shorts</button>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Toast Notification Container -->
+  <div class="toast-container" id="toast-container"></div>
+
+  <!-- JavaScript Scripts -->
+  <script src="js/transcribe.js"></script>
+  <script src="js/highlights.js"></script>
+  <script src="js/transformer.js"></script>
+  <script src="js/bookViewer.js"></script>
+  <script src="js/export.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

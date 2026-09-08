@@ -1,0 +1,18 @@
+# Media files and uploads (too large for git/Vercel)
+*.m4a
+*.wav
+*.mp4
+*.mov
+uploads/
+
+# Python cache & logs
+__pycache__/
+*.pyc
+*.log
+
+# OS artifacts
+.DS_Store
+.vscode/
+.idea/
+.vercel
+main
