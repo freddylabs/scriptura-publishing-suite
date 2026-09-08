@@ -1,6 +1,4 @@
 {
-  "version": 2,
-  "name": "scriptura-publishing-suite",
   "cleanUrls": true,
   "trailingSlash": false
 }

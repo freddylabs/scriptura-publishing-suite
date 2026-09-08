@@ -1,0 +1,11 @@
+*.m4a
+*.wav
+*.mp4
+*.mov
+uploads/
+main
+bench
+server
+quantize
+.git/
+Screen Recording*
