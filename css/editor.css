@@ -208,9 +208,11 @@
   border-radius: var(--radius-sm);
   padding: 0.6rem 0.8rem;
   color: var(--text-primary);
-  font-size: 0.95rem;
+  font-size: 1rem;
   outline: none;
   font-family: var(--font-body);
+  width: 100%;
+  max-width: 100%;
 }
 
 .book-pullquote-box {
@@ -424,8 +426,55 @@
     grid-template-columns: 1fr;
   }
 
+  .editor-workspace,
+  .editor-split-view {
+    min-height: 0;
+  }
+
+  .chapter-list {
+    flex-direction: row;
+    overflow-x: auto;
+    max-height: none;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 0.25rem;
+  }
+
+  .chapter-nav-item {
+    min-width: 180px;
+    flex-shrink: 0;
+  }
+
+  .editor-toolbar,
+  .editor-toolbar-left,
+  .editor-toolbar-right {
+    flex-wrap: wrap;
+    align-items: stretch;
+  }
+
+  .editor-toolbar-right .btn,
+  .selection-actions .btn {
+    min-height: 44px;
+  }
+
+  .editor-split-view {
+    height: auto;
+  }
+
+  .editor-pane {
+    min-height: 280px;
+  }
+
   .selection-toolbar {
     flex-direction: column;
     align-items: stretch;
+  }
+
+  .clip-library {
+    grid-template-columns: 1fr;
+  }
+
+  .reel-player-wrapper.is-empty::after {
+    font-size: 0.8rem;
+    padding: 0.75rem;
   }
 }

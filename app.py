@@ -9,10 +9,13 @@ import os
 import sys
 import json
 import time
+import uuid
 import shutil
 import subprocess
+import re
 from pathlib import Path
 from http.server import HTTPServer, SimpleHTTPRequestHandler
+from socketserver import ThreadingMixIn
 import urllib.parse
 import cgi
 
@@ -20,18 +23,78 @@ PORT = int(os.environ.get("PORT", 8080))
 BASE_DIR = Path(__file__).parent.resolve()
 UPLOAD_DIR = BASE_DIR / "uploads"
 UPLOAD_DIR.mkdir(exist_ok=True)
+SESSIONS_DIR = UPLOAD_DIR / "sessions"
+SESSIONS_DIR.mkdir(exist_ok=True)
 CLIPS_DIR = UPLOAD_DIR / "clips"
 CLIPS_DIR.mkdir(exist_ok=True)
 SAMPLE_DATA_DIR = BASE_DIR / "sample_data"
+MAX_UPLOAD_BYTES = 500 * 1024 * 1024
+MAX_MULTIPART_OVERHEAD = 4 * 1024 * 1024
+SESSION_TTL_SEC = 4 * 60 * 60
+SESSION_ID_RE = re.compile(r"^[0-9a-fA-F-]{36}$")
 SCRATCH_DIR = Path("/Users/farthu1/.gemini/antigravity-ide/brain/88273a8b-e281-4611-a26c-7a8897db5f4b/scratch")
 WHISPER_BIN = SCRATCH_DIR / "whisper.cpp" / "main"
 WHISPER_MODEL = SCRATCH_DIR / "whisper.cpp" / "models" / "ggml-base.en.bin"
 
+class ThreadedHTTPServer(ThreadingMixIn, HTTPServer):
+    daemon_threads = True
+    allow_reuse_address = True
+
+
+def valid_session_id(value):
+    return bool(value and SESSION_ID_RE.match(str(value)))
+
+
+def session_path(session_id):
+    return SESSIONS_DIR / session_id
+
+
+def path_is_inside(child, parent):
+    try:
+        Path(child).resolve().relative_to(Path(parent).resolve())
+        return True
+    except (ValueError, OSError):
+        return False
+
+
+def touch_session(session_id):
+    folder = session_path(session_id)
+    folder.mkdir(parents=True, exist_ok=True)
+    stamp = folder / ".activity"
+    stamp.write_text(str(time.time()), encoding="utf-8")
+    return folder
+
+
+def purge_session(session_id):
+    folder = session_path(session_id)
+    if folder.exists() and path_is_inside(folder, SESSIONS_DIR):
+        shutil.rmtree(folder, ignore_errors=True)
+
+
+def expire_old_sessions():
+    now = time.time()
+    if not SESSIONS_DIR.exists():
+        return
+    for folder in SESSIONS_DIR.iterdir():
+        if not folder.is_dir():
+            continue
+        stamp = folder / ".activity"
+        try:
+            mtime = stamp.stat().st_mtime if stamp.exists() else folder.stat().st_mtime
+        except OSError:
+            continue
+        if now - mtime > SESSION_TTL_SEC:
+            shutil.rmtree(folder, ignore_errors=True)
+
+
 class ScripturaHandler(SimpleHTTPRequestHandler):
+    timeout = None
+    protocol_version = "HTTP/1.1"
+
     def end_headers(self):
         self.send_header('Access-Control-Allow-Origin', '*')
         self.send_header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
-        self.send_header('Access-Control-Allow-Headers', 'Content-Type')
+        self.send_header('Access-Control-Allow-Headers', 'Content-Type, X-Session-Id')
         super().end_headers()
 
     def do_OPTIONS(self):
@@ -93,6 +156,10 @@ class ScripturaHandler(SimpleHTTPRequestHandler):
             self.handle_crop_clip()
             return
 
+        if path == "/api/discard":
+            self.handle_discard()
+            return
+
         if path == "/api/export-md":
             self.handle_export_md()
             return
@@ -101,28 +168,66 @@ class ScripturaHandler(SimpleHTTPRequestHandler):
 
     def handle_upload(self):
         try:
-            ctype, pdict = cgi.parse_header(self.headers.get('content-type'))
-            if ctype != 'multipart/form-data':
+            expire_old_sessions()
+            content_length = int(self.headers.get("content-length", 0) or 0)
+            if content_length > MAX_UPLOAD_BYTES + MAX_MULTIPART_OVERHEAD:
+                self.close_connection = True
+                self.send_json_response({
+                    "success": False,
+                    "error": "File is over 500 MB. Please upload a smaller recording."
+                }, status=413)
+                return
+
+            ctype, _pdict = cgi.parse_header(self.headers.get("content-type", ""))
+            if ctype != "multipart/form-data":
                 self.send_error(400, "Expected multipart/form-data")
                 return
 
-            pdict['boundary'] = bytes(pdict['boundary'], "utf-8")
-            pdict['CONTENT-LENGTH'] = int(self.headers.get('content-length', 0))
-            fields = cgi.parse_multipart(self.rfile, pdict)
+            environ = {
+                "REQUEST_METHOD": "POST",
+                "CONTENT_TYPE": self.headers.get("Content-Type", ""),
+                "CONTENT_LENGTH": str(content_length),
+            }
+            form = cgi.FieldStorage(
+                fp=self.rfile,
+                headers=self.headers,
+                environ=environ,
+                keep_blank_values=True,
+            )
 
-            file_data = fields.get('file')
-            if not file_data or len(file_data) == 0:
+            item = form["file"] if "file" in form else None
+            if item is None or not getattr(item, "file", None):
                 self.send_error(400, "No file uploaded")
                 return
 
-            original_filename = fields.get('filename', ['uploaded_media.mp4'])[0]
-            safe_name = "".join(c for c in original_filename if c.isalnum() or c in "._- ")
-            save_path = UPLOAD_DIR / safe_name
+            original_filename = form.getvalue("filename") or getattr(item, "filename", None) or "uploaded_media.mp4"
+            safe_name = "".join(c for c in original_filename if c.isalnum() or c in "._- ") or "uploaded_media.mp4"
 
-            with open(save_path, "wb") as f:
-                f.write(file_data[0])
+            session_id = form.getvalue("sessionId") or self.headers.get("X-Session-Id") or str(uuid.uuid4())
+            if not valid_session_id(session_id):
+                session_id = str(uuid.uuid4())
 
-            # Inspect duration and properties using afinfo
+            folder = touch_session(session_id)
+            (folder / "clips").mkdir(exist_ok=True)
+            save_path = folder / safe_name
+
+            written = 0
+            with open(save_path, "wb") as out:
+                while True:
+                    chunk = item.file.read(1024 * 1024)
+                    if not chunk:
+                        break
+                    written += len(chunk)
+                    if written > MAX_UPLOAD_BYTES:
+                        out.close()
+                        save_path.unlink(missing_ok=True)
+                        self.send_json_response({
+                            "success": False,
+                            "error": "File is over 500 MB. Please upload a smaller recording."
+                        }, status=413)
+                        return
+                    out.write(chunk)
+
             duration = 0
             try:
                 proc = subprocess.run(["afinfo", str(save_path)], capture_output=True, text=True)
@@ -132,14 +237,33 @@ class ScripturaHandler(SimpleHTTPRequestHandler):
             except Exception:
                 pass
 
+            rel = save_path.relative_to(UPLOAD_DIR).as_posix()
             self.send_json_response({
                 "success": True,
                 "filename": safe_name,
                 "filePath": str(save_path),
-                "sizeBytes": len(file_data[0]),
+                "sessionId": session_id,
+                "sizeBytes": written,
+                "maxBytes": MAX_UPLOAD_BYTES,
                 "durationSec": duration,
-                "webUrl": f"/uploads/{safe_name}"
+                "webUrl": f"/uploads/{rel}",
+                "expiresInSec": SESSION_TTL_SEC
             })
+        except Exception as e:
+            self.send_json_response({"success": False, "error": str(e)}, status=500)
+
+    def handle_discard(self):
+        try:
+            expire_old_sessions()
+            length = int(self.headers.get("content-length", 0) or 0)
+            req_body = self.rfile.read(length).decode("utf-8") if length else "{}"
+            params = json.loads(req_body) if req_body else {}
+            session_id = params.get("sessionId") or self.headers.get("X-Session-Id")
+            if not valid_session_id(session_id):
+                self.send_json_response({"success": False, "error": "Missing session"}, status=400)
+                return
+            purge_session(session_id)
+            self.send_json_response({"success": True, "discarded": True})
         except Exception as e:
             self.send_json_response({"success": False, "error": str(e)}, status=500)
 
@@ -150,6 +274,10 @@ class ScripturaHandler(SimpleHTTPRequestHandler):
             params = json.loads(req_body) if req_body else {}
 
             input_path = params.get("filePath")
+            session_id = params.get("sessionId")
+            if valid_session_id(session_id):
+                touch_session(session_id)
+
             if not input_path or not Path(input_path).exists():
                 # If no custom file provided, use the pre-transcribed 801-segment dataset
                 json_path = BASE_DIR / "Screen_Recording_2026-09-07_transcript.json"
@@ -163,11 +291,12 @@ class ScripturaHandler(SimpleHTTPRequestHandler):
                 })
                 return
 
-            # Convert to 16kHz mono wav for Whisper
-            temp_wav = UPLOAD_DIR / f"temp_{int(time.time())}.wav"
+            work_dir = session_path(session_id) if valid_session_id(session_id) else UPLOAD_DIR
+            work_dir.mkdir(parents=True, exist_ok=True)
+            temp_wav = work_dir / f"temp_{int(time.time())}.wav"
             subprocess.run(["afconvert", "-f", "WAVE", "-d", "LEI16@16000", "-c", "1", input_path, str(temp_wav)], check=True)
 
-            out_prefix = UPLOAD_DIR / f"transcript_{int(time.time())}"
+            out_prefix = work_dir / f"transcript_{int(time.time())}"
             whisper_cmd = [
                 str(WHISPER_BIN),
                 "-m", str(WHISPER_MODEL),
@@ -191,6 +320,10 @@ class ScripturaHandler(SimpleHTTPRequestHandler):
                     "vttFile": f"{out_prefix}.vtt",
                     "txtFile": f"{out_prefix}.txt"
                 })
+                try:
+                    temp_wav.unlink(missing_ok=True)
+                except Exception:
+                    pass
             else:
                 self.send_json_response({"success": False, "error": "Transcription output missing"}, status=500)
 
@@ -372,11 +505,15 @@ class ScripturaHandler(SimpleHTTPRequestHandler):
             params = json.loads(req_body) if req_body else {}
 
             source = params.get("filePath")
+            session_id = params.get("sessionId")
             start = float(params.get("startSec", 0) or 0)
             end = float(params.get("endSec", 0) or 0)
             duration = max(0.4, end - start)
 
-            if not source or not Path(source).exists():
+            if valid_session_id(session_id):
+                touch_session(session_id)
+
+            if not source or not Path(source).exists() or not path_is_inside(source, UPLOAD_DIR):
                 self.send_json_response({
                     "success": False,
                     "error": "No source video on the server",
@@ -386,7 +523,14 @@ class ScripturaHandler(SimpleHTTPRequestHandler):
 
             stamp = int(time.time())
             out_name = f"clip_{stamp}_{int(start)}-{int(end)}.mp4"
-            out_path = CLIPS_DIR / out_name
+            if valid_session_id(session_id):
+                clips_dir = session_path(session_id) / "clips"
+                clips_dir.mkdir(parents=True, exist_ok=True)
+                out_path = clips_dir / out_name
+                clip_url = f"/uploads/sessions/{session_id}/clips/{out_name}"
+            else:
+                out_path = CLIPS_DIR / out_name
+                clip_url = f"/uploads/clips/{out_name}"
 
             avconvert = shutil.which("avconvert") or "/usr/bin/avconvert"
             ffmpeg = shutil.which("ffmpeg")
@@ -435,7 +579,7 @@ class ScripturaHandler(SimpleHTTPRequestHandler):
             if ok:
                 self.send_json_response({
                     "success": True,
-                    "clipUrl": f"/uploads/clips/{out_name}",
+                    "clipUrl": clip_url,
                     "filename": out_name,
                     "startSec": start,
                     "endSec": end,
@@ -523,8 +667,8 @@ class ScripturaHandler(SimpleHTTPRequestHandler):
 if __name__ == "__main__":
     os.chdir(BASE_DIR)
     server_address = ('', PORT)
-    httpd = HTTPServer(server_address, ScripturaHandler)
-    print(f"🚀 Scriptura Publishing Engine running at http://localhost:{PORT}")
+    httpd = ThreadedHTTPServer(server_address, ScripturaHandler)
+    print(f"Studio running at http://localhost:{PORT} (uploads up to 500 MB, deleted when you finish or after 4 hours)")
     try:
         httpd.serve_forever()
     except KeyboardInterrupt:

@@ -46,6 +46,11 @@ const TranscribeModule = {
   },
 
   async handleFileUpload(file) {
+    if (file.size > MAX_UPLOAD_BYTES) {
+      showToast('That file is over 500 MB. Please compress it or upload a shorter recording.', 'warning');
+      return;
+    }
+
     showToast(`Loading ${file.name}…`, 'info');
 
     if (AppState.mediaObjectUrl) {
@@ -70,21 +75,66 @@ const TranscribeModule = {
     this.bindMediaSync();
     HighlightsModule.attachSourceMedia(objectUrl, AppState.mediaIsVideo);
 
-    const formData = new FormData();
-    formData.append('file', file);
-    formData.append('filename', file.name);
+    const progressWrap = document.getElementById('upload-progress');
+    const progressBar = document.getElementById('upload-progress-bar');
+    const progressLabel = document.getElementById('upload-progress-label');
+    if (progressWrap) progressWrap.hidden = false;
+    if (progressBar) progressBar.style.width = '0%';
+    if (progressLabel) progressLabel.textContent = 'Uploading to a temporary folder…';
 
     try {
-      const res = await fetch('/api/upload', { method: 'POST', body: formData });
-      const data = await res.json();
-      if (data.success) {
+      const data = await this.uploadToServer(file, (pct) => {
+        if (progressBar) progressBar.style.width = `${pct}%`;
+        if (progressLabel) progressLabel.textContent = `Uploading ${pct}% of ${(file.size / (1024 * 1024)).toFixed(0)} MB`;
+      });
+      if (data && data.success) {
         AppState.mediaFile = data;
-        showToast(`${file.name} is ready. Transcribe it, then open Clips to cut moments.`, 'success');
+        if (data.sessionId) {
+          AppState.sessionId = data.sessionId;
+          try { localStorage.setItem(SESSION_STORAGE_KEY, data.sessionId); } catch (e) {}
+        }
+        if (progressLabel) progressLabel.textContent = 'On the server until you finish (or 4 hours)';
+        if (progressBar) progressBar.style.width = '100%';
+        showToast(`${file.name} is ready. It will be deleted when you click Finish.`, 'success');
+      } else {
+        throw new Error((data && data.error) || 'Upload failed');
       }
     } catch (e) {
       AppState.mediaFile = { filename: file.name, localOnly: true };
-      showToast('File is ready locally. Clips can still be cut in the browser.', 'info');
+      if (progressLabel) progressLabel.textContent = 'Kept only in this browser tab';
+      showToast(e.message || 'File is ready in this browser. Server upload was skipped.', 'info');
     }
+  },
+
+  uploadToServer(file, onProgress) {
+    return new Promise((resolve, reject) => {
+      const xhr = new XMLHttpRequest();
+      xhr.open('POST', '/api/upload');
+      xhr.setRequestHeader('X-Session-Id', getSessionId());
+      xhr.upload.onprogress = (event) => {
+        if (!event.lengthComputable) return;
+        const pct = Math.min(100, Math.round((event.loaded / event.total) * 100));
+        onProgress(pct);
+      };
+      xhr.onload = () => {
+        try {
+          const data = JSON.parse(xhr.responseText || '{}');
+          if (xhr.status >= 400) {
+            reject(new Error(data.error || `Upload failed (${xhr.status})`));
+            return;
+          }
+          resolve(data);
+        } catch (err) {
+          reject(err);
+        }
+      };
+      xhr.onerror = () => reject(new Error('Network error during upload'));
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('filename', file.name);
+      formData.append('sessionId', getSessionId());
+      xhr.send(formData);
+    });
   },
 
   async runTranscription() {
@@ -101,7 +151,8 @@ const TranscribeModule = {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          filePath: AppState.mediaFile ? AppState.mediaFile.filePath : null
+          filePath: AppState.mediaFile ? AppState.mediaFile.filePath : null,
+          sessionId: getSessionId()
         })
       });
       const data = await res.json();

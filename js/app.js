@@ -12,8 +12,12 @@ const AppState = {
   mediaFile: null,
   mediaBlobUrl: null,
   mediaIsVideo: false,
-  mediaObjectUrl: null
+  mediaObjectUrl: null,
+  sessionId: null
 };
+
+const MAX_UPLOAD_BYTES = 500 * 1024 * 1024;
+const SESSION_STORAGE_KEY = 'tga-work-session';
 
 const TAB_COPY = {
   studio: { kicker: 'Step 1 of 6', title: 'Upload & transcribe' },
@@ -25,7 +29,9 @@ const TAB_COPY = {
 };
 
 document.addEventListener('DOMContentLoaded', async () => {
+  getSessionId();
   initNavigation();
+  initFinishButton();
   await loadInitialShowcaseData();
   TranscribeModule.init();
   HighlightsModule.init();
@@ -33,6 +39,91 @@ document.addEventListener('DOMContentLoaded', async () => {
   BookViewerModule.init();
   ExportModule.init();
 });
+
+function getSessionId() {
+  if (AppState.sessionId) return AppState.sessionId;
+  let id = null;
+  try {
+    id = localStorage.getItem(SESSION_STORAGE_KEY);
+  } catch (e) {
+    id = null;
+  }
+  if (!id || !/^[0-9a-f-]{36}$/i.test(id)) {
+    id = (window.crypto && crypto.randomUUID)
+      ? crypto.randomUUID()
+      : 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+          const r = Math.random() * 16 | 0;
+          const v = c === 'x' ? r : (r & 0x3 | 0x8);
+          return v.toString(16);
+        });
+    try {
+      localStorage.setItem(SESSION_STORAGE_KEY, id);
+    } catch (e) {
+      // private mode
+    }
+  }
+  AppState.sessionId = id;
+  return id;
+}
+
+function initFinishButton() {
+  const btn = document.getElementById('btn-finish-discard');
+  if (!btn) return;
+  btn.addEventListener('click', async () => {
+    const ok = window.confirm('Delete your uploaded recording and server clips from this session? Downloads already on your computer are kept.');
+    if (!ok) return;
+    await discardSessionFiles();
+  });
+}
+
+async function discardSessionFiles() {
+  const sessionId = getSessionId();
+  try {
+    await fetch('/api/discard', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Session-Id': sessionId
+      },
+      body: JSON.stringify({ sessionId }),
+      keepalive: true
+    });
+  } catch (e) {
+    console.warn('Could not reach discard endpoint', e);
+  }
+
+  if (AppState.mediaObjectUrl) {
+    URL.revokeObjectURL(AppState.mediaObjectUrl);
+  }
+  AppState.mediaFile = null;
+  AppState.mediaBlobUrl = null;
+  AppState.mediaObjectUrl = null;
+  AppState.mediaIsVideo = false;
+
+  if (typeof HighlightsModule !== 'undefined') {
+    HighlightsModule.clips.forEach((clip) => {
+      if (clip.revokeOnClear && clip.url) URL.revokeObjectURL(clip.url);
+    });
+    HighlightsModule.clips = [];
+    HighlightsModule.renderLibrary();
+    HighlightsModule.attachSourceMedia('', false);
+  }
+
+  const mediaContainer = document.getElementById('media-player-container');
+  if (mediaContainer) {
+    mediaContainer.innerHTML = `
+      <div class="media-empty">
+        <p>No recording loaded yet</p>
+        <small>Upload a file up to 500 MB. It will be deleted when you finish, or after 4 hours.</small>
+      </div>`;
+  }
+  const status = document.getElementById('media-status-label');
+  if (status) status.textContent = 'No file yet';
+  const progress = document.getElementById('upload-progress');
+  if (progress) progress.hidden = true;
+
+  showToast('Your recording was deleted from the server.', 'success');
+}
 
 function initNavigation() {
   document.querySelectorAll('.nav-tab-btn').forEach((btn) => {

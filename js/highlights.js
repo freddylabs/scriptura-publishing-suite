@@ -298,6 +298,7 @@ const HighlightsModule = {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           filePath: AppState.mediaFile.filePath,
+          sessionId: getSessionId(),
           startSec: bounds.startSec,
           endSec: bounds.endSec,
           label: bounds.text.slice(0, 40)
