@@ -10,6 +10,9 @@ __pycache__/
 *.pyc
 *.log
 
+# Local workspace folder; the published app stays at the repository root
+/Transcription and editor/
+
 # OS artifacts
 .DS_Store
 .vscode/
