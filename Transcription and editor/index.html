@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>The Gospel Appraisal — Clips &amp; Manuscript Studio</title>
+  <meta name="description" content="Upload a sermon or lecture, highlight timestamped lines to cut short video clips, and shape spoken words into a readable book without sounding machine-written.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=JetBrains+Mono:wght@400;500&family=Lora:ital,wght@0,400;0,500;0,600;1,400&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/main.css">
+  <link rel="stylesheet" href="css/editor.css">
+  <link rel="stylesheet" href="css/book-preview.css">
+</head>
+<body>
+
+  <aside class="app-sidebar">
+    <div class="brand-block">
+      <div class="brand-mark">
+        <img src="assets/brand-logo.jpg" alt="The Gospel Appraisal and The Gospel Broadcasting Network" class="brand-logo">
+      </div>
+      <p class="brand-copy">Clips &amp; manuscript studio</p>
+    </div>
+
+    <nav class="side-nav" id="main-nav-tabs">
+      <button class="nav-tab-btn active" data-tab="studio" id="tab-btn-studio">
+        <span class="nav-ico">1</span>
+        <span class="nav-copy">
+          <strong>Transcribe</strong>
+          <small>Upload and timestamps</small>
+        </span>
+      </button>
+      <button class="nav-tab-btn" data-tab="highlights" id="tab-btn-highlights">
+        <span class="nav-ico">2</span>
+        <span class="nav-copy">
+          <strong>Clips</strong>
+          <small>Select text, cut video</small>
+        </span>
+      </button>
+      <button class="nav-tab-btn" data-tab="editor" id="tab-btn-editor">
+        <span class="nav-ico">3</span>
+        <span class="nav-copy">
+          <strong>Manuscript</strong>
+          <small>Proofread in your voice</small>
+        </span>
+      </button>
+      <button class="nav-tab-btn" data-tab="reader" id="tab-btn-reader">
+        <span class="nav-ico">4</span>
+        <span class="nav-copy">
+          <strong>Reader</strong>
+          <small>Page-by-page preview</small>
+        </span>
+      </button>
+      <button class="nav-tab-btn" data-tab="cover" id="tab-btn-cover">
+        <span class="nav-ico">5</span>
+        <span class="nav-copy">
+          <strong>Cover</strong>
+          <small>Title and palette</small>
+        </span>
+      </button>
+      <button class="nav-tab-btn" data-tab="services" id="tab-btn-services">
+        <span class="nav-ico">6</span>
+        <span class="nav-copy">
+          <strong>Publish</strong>
+          <small>Audio, print, shorts</small>
+        </span>
+      </button>
+    </nav>
+
+    <p class="sidebar-foot">A TGBN companion workspace</p>
+  </aside>
+
+  <div class="app-shell">
+    <header class="app-topbar">
+      <div>
+        <p class="topbar-kicker" id="topbar-kicker">Step 1 of 6</p>
+        <h1 class="topbar-title" id="topbar-title">Upload &amp; transcribe</h1>
+      </div>
+      <div class="header-actions">
+        <button class="btn btn-secondary btn-sm" id="btn-export-markdown">Export markdown</button>
+        <button class="btn btn-primary btn-sm" id="btn-export-pdf">Print / PDF</button>
+      </div>
+    </header>
+
+    <main class="app-container">
+
+      <section class="tab-view active" id="tab-studio">
+        <div class="hero-banner">
+          <div class="hero-content">
+            <span class="badge-tag">Sermons · lectures · recordings</span>
+            <h2 class="hero-title">From a recording to short clips and a readable book</h2>
+            <p class="hero-subtitle">
+              Upload a video, then highlight lines in the timestamped transcript. Those times become the in and out points for short clips. When you are ready, we tidy the spoken words into chapters that still sound like the speaker — not like a generated essay.
+            </p>
+            <div class="hero-stats">
+              <div class="stat-item">
+                <span class="stat-value" id="transcript-segment-count">—</span>
+                <span class="stat-label">Transcript lines</span>
+              </div>
+              <div class="stat-item">
+                <span class="stat-value" id="media-status-label">No file yet</span>
+                <span class="stat-label">Source video</span>
+              </div>
+              <div class="stat-item">
+                <span class="stat-value" id="clip-count-stat">0 clips</span>
+                <span class="stat-label">Cut from this file</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="studio-grid">
+          <div class="studio-left-col">
+            <div class="glass-card">
+              <div class="card-header">
+                <h3 class="card-title">Source file</h3>
+                <span class="badge-tag">MP4, MOV, M4A, MP3</span>
+              </div>
+
+              <div class="dropzone" id="media-dropzone">
+                <div class="dropzone-icon">↑</div>
+                <div class="dropzone-text">
+                  <h3>Drop a video or audio file here</h3>
+                  <p>Or click to browse. Clips are cut from this file using the transcript times.</p>
+                  <input type="file" id="media-file-input" class="file-input" accept="video/*,audio/*">
+                </div>
+                <button type="button" class="btn btn-secondary btn-sm">Choose file</button>
+              </div>
+
+              <div class="media-preview-container" id="media-player-container">
+                <div class="media-empty">
+                  <p>No recording loaded yet</p>
+                  <small>A sample transcript is available so you can explore the workspace. Upload your own video when you want real clips.</small>
+                </div>
+              </div>
+
+              <div class="card-actions">
+                <button class="btn btn-primary" id="btn-run-transcribe">
+                  Transcribe with timestamps
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div class="studio-right-col">
+            <div class="glass-card">
+              <div class="card-header">
+                <div>
+                  <h3 class="card-title">Timestamped transcript</h3>
+                  <p class="card-hint">Click a line to jump in the player. Open Clips to highlight a stretch and cut it.</p>
+                </div>
+                <div class="transcript-header-actions">
+                  <input type="text" id="transcript-search" class="search-box" placeholder="Search lines…">
+                  <button class="btn btn-secondary btn-sm" id="btn-export-srt">SRT</button>
+                  <button class="btn btn-secondary btn-sm" id="btn-export-txt">TXT</button>
+                </div>
+              </div>
+              <div class="transcript-feed" id="transcript-feed"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="transform-bar">
+          <div class="transform-info">
+            <h4>What next?</h4>
+            <p>Cut short videos from the lines you care about, or shape the talk into chapters with light proofreading.</p>
+          </div>
+          <div class="transform-actions">
+            <button class="btn btn-secondary" type="button" onclick="switchTab('highlights')">Go to clips</button>
+            <button class="btn btn-primary" id="btn-transform-action">Shape into a manuscript</button>
+          </div>
+        </div>
+      </section>
+
+      <section class="tab-view" id="tab-highlights">
+        <div class="page-intro">
+          <h2>Select the words. Cut that stretch of video.</h2>
+          <p>
+            Highlight any run of timestamped lines — click one line, then another, or drag across them.
+            The first line’s start time and the last line’s end time become the crop. You get a short clip to preview and download.
+          </p>
+        </div>
+
+        <div class="clip-studio-grid">
+          <div class="glass-card clip-video-card">
+            <div class="card-header">
+              <h3 class="card-title">Source player</h3>
+              <span class="badge-tag" id="clip-source-badge">Waiting for a file</span>
+            </div>
+            <div class="reel-player-wrapper is-empty" id="reel-player-container">
+              <video id="clip-source-video" class="reel-player-video" playsinline controls></video>
+              <video id="reel-master-video" class="visually-hidden" playsinline></video>
+              <div class="reel-transition-overlay" id="reel-transition-fx-overlay"></div>
+              <div class="reel-caption-overlay-container" id="reel-caption-overlay" hidden></div>
+            </div>
+
+            <div class="selection-toolbar" id="selection-toolbar">
+              <div class="selection-meta">
+                <strong id="selection-range-label">Nothing selected</strong>
+                <span id="selection-duration-label">Highlight transcript lines to set in and out points</span>
+              </div>
+              <div class="selection-actions">
+                <button class="btn btn-secondary btn-sm" id="btn-clear-selection" type="button">Clear</button>
+                <button class="btn btn-primary" id="btn-crop-selection" type="button" disabled>Cut clip from timestamps</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="glass-card">
+            <div class="card-header">
+              <div>
+                <h3 class="card-title">Select from timestamps</h3>
+                <p class="card-hint">Selected lines turn gold. The crop uses their earliest start and latest end.</p>
+              </div>
+              <button class="btn btn-secondary btn-sm" id="btn-ai-auto-highlights" type="button">Suggest strong lines</button>
+            </div>
+            <div class="selectable-transcript" id="clip-transcript-feed"></div>
+          </div>
+        </div>
+
+        <div class="glass-card clip-library-card">
+          <div class="card-header">
+            <div>
+              <h3 class="card-title">Your short clips</h3>
+              <p class="card-hint">Each card is a cropped file you can play and download. Nothing is merged into a reel unless you want that later.</p>
+            </div>
+            <button class="btn btn-secondary btn-sm" id="btn-clear-all-clips" type="button">Clear library</button>
+          </div>
+          <div class="clip-library" id="clip-library"></div>
+        </div>
+      </section>
+
+      <section class="tab-view" id="tab-editor">
+        <div class="editor-workspace">
+          <aside class="chapter-sidebar">
+            <div class="chapter-sidebar-header">
+              <h4>Chapters</h4>
+              <span class="badge-tag" id="chapter-count-badge">—</span>
+            </div>
+            <div class="chapter-list" id="chapter-nav-list"></div>
+          </aside>
+
+          <div class="editor-canvas">
+            <div class="editor-toolbar">
+              <div class="editor-toolbar-left">
+                <h3>Manuscript</h3>
+                <select id="genre-tone-select" class="meta-input-field">
+                  <option value="Theological & Prophetic Non-Fiction">Theological non-fiction</option>
+                  <option value="Masterclass & Executive Leadership">Teaching &amp; leadership</option>
+                  <option value="Inspirational & Memoir">Memoir &amp; testimony</option>
+                  <option value="Academic Treatise">Study notes</option>
+                </select>
+              </div>
+              <div class="editor-toolbar-right">
+                <button class="btn btn-secondary btn-sm" id="btn-proofread-chapter" type="button">Proofread this chapter</button>
+                <button class="btn btn-secondary btn-sm" type="button" onclick="switchTab('reader')">Open reader</button>
+              </div>
+            </div>
+
+            <p class="editor-voice-note">
+              Proofreading fixes grammar, fillers, and run-ons. It will not restyle the talk into generic “AI prose,” and it will not invent headings or takeaways the speaker never said.
+            </p>
+
+            <div class="meta-grid">
+              <div class="meta-input-group">
+                <label class="meta-input-label" for="editor-chapter-title">Chapter title</label>
+                <input type="text" id="editor-chapter-title" class="meta-input-field" value="">
+              </div>
+              <div class="meta-input-group">
+                <label class="meta-input-label" for="editor-chapter-subtitle">Time span</label>
+                <input type="text" id="editor-chapter-subtitle" class="meta-input-field" value="">
+              </div>
+            </div>
+
+            <div class="meta-input-group">
+              <label class="meta-input-label" for="editor-chapter-epigraph">Epigraph (only if it was actually spoken or cited)</label>
+              <input type="text" id="editor-chapter-epigraph" class="meta-input-field" value="">
+            </div>
+
+            <div class="editor-split-view">
+              <div class="editor-pane">
+                <div class="pane-header">
+                  <span>Spoken transcript</span>
+                  <span>As recorded</span>
+                </div>
+                <div class="pane-content raw-transcript-view" id="editor-raw-pane"></div>
+              </div>
+              <div class="editor-pane editor-pane-live">
+                <div class="pane-header">
+                  <span>Readable draft</span>
+                  <span>Editable</span>
+                </div>
+                <div class="pane-content" id="editor-prose-pane" contenteditable="true"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="tab-view" id="tab-reader">
+        <div class="reader-controls-bar">
+          <div class="reader-theme-selector">
+            <span class="reader-theme-label">Page color</span>
+            <button class="theme-pill-btn active" data-theme="theme-white">Ivory</button>
+            <button class="theme-pill-btn" data-theme="theme-sepia">Sepia</button>
+            <button class="theme-pill-btn" data-theme="theme-dark">Night</button>
+          </div>
+          <div class="header-actions">
+            <button class="btn btn-secondary btn-sm" id="btn-export-json">Export JSON</button>
+            <button class="btn btn-primary btn-sm" type="button" onclick="window.print()">Print spread</button>
+          </div>
+        </div>
+
+        <div class="book-spread-container">
+          <div class="book-spread theme-white" id="interactive-book-spread">
+            <div class="book-page book-page-left">
+              <div class="book-header-folio" id="reader-left-folio"></div>
+              <div class="book-content-body" id="reader-left-content"></div>
+              <div class="book-footer-folio" id="reader-left-page-num">1</div>
+            </div>
+            <div class="book-page book-page-right">
+              <div class="book-header-folio" id="reader-right-folio"></div>
+              <div class="book-content-body" id="reader-right-content"></div>
+              <div class="book-footer-folio" id="reader-right-page-num">2</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="book-spread-nav">
+          <button class="btn btn-secondary" id="btn-prev-page">Previous chapter</button>
+          <span class="page-turn-hint">Turn the page</span>
+          <button class="btn btn-primary" id="btn-next-page">Next chapter</button>
+        </div>
+      </section>
+
+      <section class="tab-view" id="tab-cover">
+        <div class="glass-card">
+          <div class="card-header">
+            <h3 class="card-title">Cover</h3>
+            <span class="badge-tag">Title, author, palette</span>
+          </div>
+          <div class="cover-studio-layout">
+            <div class="book-cover-mockup-wrapper">
+              <div class="book-cover-3d" id="interactive-cover-3d">
+                <div class="cover-badge-text" id="cover-preview-genre">Theological edition</div>
+                <div>
+                  <h2 class="cover-main-title" id="cover-preview-title">The Prophetic Destiny of Africa</h2>
+                  <p class="cover-subtitle-text" id="cover-preview-subtitle">Biblical truths, historic myths, and a call to mission</p>
+                </div>
+                <div class="cover-author-tag" id="cover-preview-author">Dr. D. K. Mensah</div>
+              </div>
+            </div>
+            <div class="cover-controls-panel">
+              <h4>Cover details</h4>
+              <div class="meta-input-group">
+                <label class="meta-input-label" for="book-title-input">Book title</label>
+                <input type="text" id="book-title-input" class="meta-input-field" value="The Prophetic Destiny of Africa">
+              </div>
+              <div class="meta-input-group">
+                <label class="meta-input-label" for="book-author-input">Author</label>
+                <input type="text" id="book-author-input" class="meta-input-field" value="Dr. D. K. Mensah">
+              </div>
+              <div class="meta-input-group">
+                <label class="meta-input-label" for="cover-palette-select">Palette</label>
+                <select id="cover-palette-select" class="meta-input-field">
+                  <option value="gold-obsidian">Navy &amp; gold</option>
+                  <option value="crimson-royalty">Crimson</option>
+                  <option value="emerald-wisdom">Emerald</option>
+                  <option value="sapphire-depth">Sapphire</option>
+                </select>
+              </div>
+              <button class="btn btn-primary" type="button" onclick="showToast('Print-ready cover packaging is ready to download.', 'success')">Export print cover</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="tab-view" id="tab-services">
+        <div class="glass-card services-intro">
+          <div class="card-header">
+            <h3 class="card-title">After the manuscript</h3>
+            <span class="badge-tag">Optional next steps</span>
+          </div>
+          <p class="services-lead">These are production paths, not a marketplace pitch. Use them when the draft already sounds like the speaker.</p>
+        </div>
+
+        <div class="services-grid">
+          <div class="service-card">
+            <span class="service-badge">Audio</span>
+            <div>
+              <h4 class="service-title">Audiobook mastering</h4>
+              <p class="service-desc">Chapter markers timed to the transcript, suitable for ACX-style delivery.</p>
+              <ul class="service-features-list">
+                <li>Chapter bookmarks from timestamps</li>
+                <li>Breath and pause cleanup, not a new narrator voice</li>
+              </ul>
+            </div>
+            <button class="btn btn-secondary btn-sm" type="button" onclick="showToast('Audiobook queue started.', 'success')">Prepare audio</button>
+          </div>
+          <div class="service-card">
+            <span class="service-badge">Languages</span>
+            <div>
+              <h4 class="service-title">Careful translation</h4>
+              <p class="service-desc">French, Spanish, Portuguese, Swahili, and Arabic with scripture terms left intact.</p>
+              <ul class="service-features-list">
+                <li>Keeps names and citations</li>
+                <li>Does not rewrite the argument</li>
+              </ul>
+            </div>
+            <button class="btn btn-secondary btn-sm" type="button" onclick="showToast('Translation options opened.', 'info')">Choose languages</button>
+          </div>
+          <div class="service-card">
+            <span class="service-badge">Print</span>
+            <div>
+              <h4 class="service-title">KDP and Ingram files</h4>
+              <p class="service-desc">Trim, gutter, and ebook wrappers when you are ready to upload.</p>
+              <ul class="service-features-list">
+                <li>6×9 and 5.5×8.5 templates</li>
+                <li>EPUB check</li>
+              </ul>
+            </div>
+            <button class="btn btn-secondary btn-sm" type="button" onclick="showToast('Print package compiled.', 'success')">Build print files</button>
+          </div>
+          <div class="service-card">
+            <span class="service-badge">Clips</span>
+            <div>
+              <h4 class="service-title">Short clips from this talk</h4>
+              <p class="service-desc">The same timestamp selection used in Clips — not auto-generated viral copy.</p>
+              <ul class="service-features-list">
+                <li>You choose the lines</li>
+                <li>We crop the video to those times</li>
+              </ul>
+            </div>
+            <button class="btn btn-primary btn-sm" type="button" onclick="switchTab('highlights')">Open clip studio</button>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <div class="toast-container" id="toast-container"></div>
+
+  <script src="js/transcribe.js"></script>
+  <script src="js/highlights.js"></script>
+  <script src="js/transformer.js"></script>
+  <script src="js/bookViewer.js"></script>
+  <script src="js/export.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

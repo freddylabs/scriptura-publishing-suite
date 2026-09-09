@@ -64,7 +64,7 @@ const BookViewerModule = {
     const leftPageNum = document.getElementById('reader-left-page-num');
     const rightPageNum = document.getElementById('reader-right-page-num');
 
-    if (leftFolio) leftFolio.textContent = meta.title || "Scriptura Edition";
+    if (leftFolio) leftFolio.textContent = meta.title || "The Gospel Appraisal";
     if (rightFolio) rightFolio.textContent = `${currentChapter.number}: ${currentChapter.title}`;
 
     const pNum = (AppState.readerCurrentPage * 2) + 1;
@@ -83,7 +83,7 @@ const BookViewerModule = {
         ${currentChapter.epigraph ? `<div class="book-epigraph-quote">${currentChapter.epigraph}</div>` : ''}
         
         ${sub1 ? `
-          <h4 style="font-family: var(--font-display); font-size: 1rem; margin: 1.25rem 0 0.5rem 0; opacity: 0.9;">${sub1.heading}</h4>
+          ${sub1.heading ? `<h4 style="font-family: var(--font-display); font-size: 1rem; margin: 1.25rem 0 0.5rem 0; opacity: 0.9;">${sub1.heading}</h4>` : ''}
           <p class="drop-cap" style="margin-bottom: 1rem;">${paragraphs1[0] || ''}</p>
           ${paragraphs1.slice(1).map(p => `<p style="margin-bottom: 1rem; text-indent: 1.5rem;">${p}</p>`).join('')}
         ` : ''}
@@ -97,7 +97,7 @@ const BookViewerModule = {
 
       rightPageContent.innerHTML = `
         ${sub2 ? `
-          <h4 style="font-family: var(--font-display); font-size: 1rem; margin-bottom: 0.5rem; opacity: 0.9;">${sub2.heading}</h4>
+          ${sub2.heading ? `<h4 style="font-family: var(--font-display); font-size: 1rem; margin-bottom: 0.5rem; opacity: 0.9;">${sub2.heading}</h4>` : ''}
           ${paragraphs2.map(p => `<p style="margin-bottom: 1rem; text-indent: 1.5rem;">${p}</p>`).join('')}
         ` : ''}
 

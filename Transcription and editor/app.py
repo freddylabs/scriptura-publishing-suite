@@ -20,6 +20,8 @@ PORT = int(os.environ.get("PORT", 8080))
 BASE_DIR = Path(__file__).parent.resolve()
 UPLOAD_DIR = BASE_DIR / "uploads"
 UPLOAD_DIR.mkdir(exist_ok=True)
+CLIPS_DIR = UPLOAD_DIR / "clips"
+CLIPS_DIR.mkdir(exist_ok=True)
 SAMPLE_DATA_DIR = BASE_DIR / "sample_data"
 SCRATCH_DIR = Path("/Users/farthu1/.gemini/antigravity-ide/brain/88273a8b-e281-4611-a26c-7a8897db5f4b/scratch")
 WHISPER_BIN = SCRATCH_DIR / "whisper.cpp" / "main"
@@ -81,6 +83,14 @@ class ScripturaHandler(SimpleHTTPRequestHandler):
 
         if path == "/api/transform-book":
             self.handle_transform_book()
+            return
+
+        if path == "/api/proofread":
+            self.handle_proofread()
+            return
+
+        if path == "/api/crop-clip":
+            self.handle_crop_clip()
             return
 
         if path == "/api/export-md":
@@ -211,7 +221,7 @@ class ScripturaHandler(SimpleHTTPRequestHandler):
                     "publicationDate": "2026",
                     "wordCount": sum(len(c["subsections"][0]["content"].split()) for c in chapters if c["subsections"]),
                     "estimatedPages": max(1, len(chapters) * 12),
-                    "summary": f"A publication-ready book manuscript structured from spoken audio recording."
+                    "summary": "A readable draft taken from spoken language, with fillers removed and sentences repaired."
                 },
                 "chapters": chapters
             }
@@ -221,20 +231,19 @@ class ScripturaHandler(SimpleHTTPRequestHandler):
             self.send_json_response({"success": False, "error": str(e)}, status=500)
 
     def generate_book_chapters(self, segments, title, author, genre):
+        import re
         if not segments:
-            # Fall back to showcase book if empty
             sample_file = SAMPLE_DATA_DIR / "showcase_book.json"
             if sample_file.exists():
                 with open(sample_file, "r") as f:
                     return json.load(f)["chapters"]
             return []
 
-        # Partition segments into 4-6 chapters
         total = len(segments)
-        chunk_size = max(1, total // 5)
+        groups = min(5, max(3, round(total / 160) or 3))
+        chunk_size = max(1, (total + groups - 1) // groups)
         chapter_chunks = [segments[i:i + chunk_size] for i in range(0, total, chunk_size)]
-        if len(chapter_chunks) > 6:
-            chapter_chunks = chapter_chunks[:6]
+        chapter_chunks = chapter_chunks[:6]
 
         generated_chapters = []
         num_names = ["One", "Two", "Three", "Four", "Five", "Six"]
@@ -243,68 +252,204 @@ class ScripturaHandler(SimpleHTTPRequestHandler):
             start_ts = chunk[0].get("timestamps", {}).get("from", "00:00:00.000")
             end_ts = chunk[-1].get("timestamps", {}).get("to", "00:00:00.000")
             raw_text = " ".join(s.get("text", "").strip() for s in chunk)
-            
-            # Clean spoken artifacts
             clean_text = self.clean_spoken_prose(raw_text)
+            paragraphs = self.to_paragraphs(clean_text)
 
-            # Split into sub-sections
-            words = clean_text.split()
-            mid = len(words) // 2
-            sec1 = " ".join(words[:mid])
-            sec2 = " ".join(words[mid:])
-
+            mid = max(1, (len(paragraphs) + 1) // 2)
+            first = "\n\n".join(paragraphs[:mid])
+            second = "\n\n".join(paragraphs[mid:])
             c_num = num_names[idx] if idx < len(num_names) else str(idx + 1)
-            first_words = " ".join(words[:5]).replace(".", "").title()
 
             generated_chapters.append({
                 "id": idx + 1,
                 "number": f"Chapter {c_num}",
-                "title": f"The Principle of {first_words or 'Foundations'}",
-                "subtitle": f"Discourse Analysis ({start_ts[:5]} to {end_ts[:5]})",
-                "epigraph": f"\"Truth unexpressed is potential unfulfilled; when spoken, it shapes eternity.\" — {author}",
+                "title": self.pick_chapter_title(clean_text, c_num),
+                "subtitle": f"{start_ts[:8]} – {end_ts[:8]}",
+                "epigraph": "",
                 "timeRange": f"{start_ts} - {end_ts}",
-                "summary": f"Examines key theological and philosophical themes introduced in this segment.",
-                "subsections": [
-                    {
-                        "heading": f"{idx+1}.1 Foundations and Historical Context",
-                        "content": sec1
-                    },
-                    {
-                        "heading": f"{idx+1}.2 Practical Applications & Future Vision",
-                        "content": sec2
-                    }
-                ],
-                "pullQuote": " ".join(words[:25]) + "...",
-                "keyTakeaways": [
-                    "Core philosophical premise established in opening arguments.",
-                    "Exegetical alignment between historical records and contemporary realities.",
-                    "Strategic mandate for the present generation."
-                ],
-                "discussionQuestions": [
-                    "How does this chapter redefine traditional understandings of the subject?",
-                    "What actionable step will you implement this week based on these insights?"
-                ]
+                "summary": "",
+                "subsections": (
+                    [{"heading": "", "content": first}]
+                    + ([{"heading": "", "content": second}] if second else [])
+                ),
+                "pullQuote": self.pick_pull_quote(clean_text),
+                "keyTakeaways": self.pick_takeaways(clean_text),
+                "discussionQuestions": []
             })
 
         return generated_chapters
 
     def clean_spoken_prose(self, raw):
         import re
-        # Remove repeated speech fillers and audio tags
-        t = re.sub(r'\[.*?\]', '', raw)
-        t = re.sub(r'\b(um|uh|you know|like|all right|now watch this|you see)\b', '', t, flags=re.IGNORECASE)
+        t = re.sub(r'\[.*?\]', '', raw or "")
+        t = re.sub(r'\((applause|laughter|music|inaudible|pause)\)', '', t, flags=re.IGNORECASE)
+        t = re.sub(
+            r'\b(um+|uh+|er+|ah+|hmm+|you know|i mean|kind of|sort of|all right|now watch this)\b',
+            '',
+            t,
+            flags=re.IGNORECASE,
+        )
+        t = re.sub(r'\bgonna\b', 'going to', t, flags=re.IGNORECASE)
+        t = re.sub(r'\bwanna\b', 'want to', t, flags=re.IGNORECASE)
+        t = re.sub(r'\bgotta\b', 'have to', t, flags=re.IGNORECASE)
+        t = re.sub(r"\blets\b", "let's", t, flags=re.IGNORECASE)
+        t = re.sub(r'\bafrica\b', 'Africa', t, flags=re.IGNORECASE)
+        t = re.sub(r'\bgod\b', 'God', t)
+        t = re.sub(r'\b(\w+)\s+\1\b', r'\1', t, flags=re.IGNORECASE)
+        t = re.sub(r'\s+([,.;:!?])', r'\1', t)
+        t = re.sub(r',([.!?])', r'\1', t)
+        t = re.sub(r'([.!?]){2,}', r'\1', t)
         t = re.sub(r'\s+', ' ', t).strip()
-        # Capitalize sentences
+
         sentences = re.split(r'([.!?]+)', t)
         cleaned_sentences = []
-        for i in range(0, len(sentences)-1, 2):
+        for i in range(0, len(sentences) - 1, 2):
             s = sentences[i].strip()
-            punct = sentences[i+1]
+            punct = sentences[i + 1]
             if s:
                 cleaned_sentences.append(s[0].upper() + s[1:] + punct)
         if len(sentences) % 2 == 1 and sentences[-1].strip():
-            cleaned_sentences.append(sentences[-1].strip().capitalize() + ".")
+            leftover = sentences[-1].strip()
+            cleaned_sentences.append(leftover[0].upper() + leftover[1:] + ".")
         return " ".join(cleaned_sentences)
+
+    def to_paragraphs(self, text):
+        import re
+        sentences = re.findall(r'[^.!?]+[.!?]+|[^.!?]+$', text)
+        paras = []
+        bucket = []
+        for s in sentences:
+            s = s.strip()
+            if not s:
+                continue
+            bucket.append(s)
+            if len(bucket) >= 3:
+                paras.append(" ".join(bucket))
+                bucket = []
+        if bucket:
+            paras.append(" ".join(bucket))
+        return paras or [text]
+
+    def pick_chapter_title(self, text, fallback):
+        import re
+        sentences = re.findall(r'[^.!?]+[.!?]+', text)
+        skip = re.compile(r'^(and|so|but|now|well|okay|yes|because|then)\b', re.I)
+        for s in sentences[:10]:
+            words = re.sub(r'["“”]', '', s).rstrip('.!?').split()
+            if 5 <= len(words) <= 12 and not skip.search(s.strip()):
+                return " ".join(words[:8]).rstrip(" ,;:")
+        return f"Chapter {fallback}"
+
+    def pick_pull_quote(self, text):
+        import re
+        sentences = [s.strip() for s in re.findall(r'[^.!?]+[.!?]+', text)]
+        for s in sentences:
+            if 40 < len(s) < 180 and re.search(r'never|not|god|africa|you are|truth|word', s, re.I):
+                return s.strip(' "“”')
+        return sentences[0].strip(' "“”') if sentences else ""
+
+    def pick_takeaways(self, text):
+        import re
+        sentences = [s.strip() for s in re.findall(r'[^.!?]+[.!?]+', text)]
+        picks = [s for s in sentences if 28 < len(s) < 140][:3]
+        return picks
+
+    def handle_proofread(self):
+        try:
+            length = int(self.headers.get('content-length', 0))
+            req_body = self.rfile.read(length).decode('utf-8')
+            params = json.loads(req_body) if req_body else {}
+            text = params.get("text", "")
+            cleaned = self.clean_spoken_prose(text)
+            self.send_json_response({"success": True, "text": cleaned})
+        except Exception as e:
+            self.send_json_response({"success": False, "error": str(e)}, status=500)
+
+    def handle_crop_clip(self):
+        try:
+            length = int(self.headers.get('content-length', 0))
+            req_body = self.rfile.read(length).decode('utf-8')
+            params = json.loads(req_body) if req_body else {}
+
+            source = params.get("filePath")
+            start = float(params.get("startSec", 0) or 0)
+            end = float(params.get("endSec", 0) or 0)
+            duration = max(0.4, end - start)
+
+            if not source or not Path(source).exists():
+                self.send_json_response({
+                    "success": False,
+                    "error": "No source video on the server",
+                    "fallback": "client"
+                }, status=400)
+                return
+
+            stamp = int(time.time())
+            out_name = f"clip_{stamp}_{int(start)}-{int(end)}.mp4"
+            out_path = CLIPS_DIR / out_name
+
+            avconvert = shutil.which("avconvert") or "/usr/bin/avconvert"
+            ffmpeg = shutil.which("ffmpeg")
+
+            ok = False
+            if Path(avconvert).exists():
+                for preset in ("PresetPassthrough", "PresetMediumQuality"):
+                    cmd = [
+                        avconvert,
+                        "--source", str(source),
+                        "--output", str(out_path),
+                        "--preset", preset,
+                        "--start", f"{start:.3f}",
+                        "--duration", f"{duration:.3f}",
+                        "--replace",
+                    ]
+                    proc = subprocess.run(cmd, capture_output=True, text=True)
+                    if proc.returncode == 0 and out_path.exists() and out_path.stat().st_size > 0:
+                        ok = True
+                        break
+
+            if not ok and ffmpeg:
+                cmd = [
+                    ffmpeg, "-y",
+                    "-ss", f"{start:.3f}",
+                    "-to", f"{end:.3f}",
+                    "-i", str(source),
+                    "-c", "copy",
+                    str(out_path),
+                ]
+                proc = subprocess.run(cmd, capture_output=True, text=True)
+                ok = proc.returncode == 0 and out_path.exists() and out_path.stat().st_size > 0
+                if not ok:
+                    cmd = [
+                        ffmpeg, "-y",
+                        "-ss", f"{start:.3f}",
+                        "-i", str(source),
+                        "-t", f"{duration:.3f}",
+                        "-c:v", "libx264", "-preset", "fast", "-crf", "23",
+                        "-c:a", "aac",
+                        str(out_path),
+                    ]
+                    proc = subprocess.run(cmd, capture_output=True, text=True)
+                    ok = proc.returncode == 0 and out_path.exists() and out_path.stat().st_size > 0
+
+            if ok:
+                self.send_json_response({
+                    "success": True,
+                    "clipUrl": f"/uploads/clips/{out_name}",
+                    "filename": out_name,
+                    "startSec": start,
+                    "endSec": end,
+                    "durationSec": duration
+                })
+                return
+
+            self.send_json_response({
+                "success": False,
+                "error": "Could not crop on the server",
+                "fallback": "client"
+            }, status=500)
+        except Exception as e:
+            self.send_json_response({"success": False, "error": str(e), "fallback": "client"}, status=500)
 
     def handle_export_md(self):
         try:
