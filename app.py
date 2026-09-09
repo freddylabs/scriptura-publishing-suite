@@ -28,7 +28,7 @@ SESSIONS_DIR.mkdir(exist_ok=True)
 CLIPS_DIR = UPLOAD_DIR / "clips"
 CLIPS_DIR.mkdir(exist_ok=True)
 SAMPLE_DATA_DIR = BASE_DIR / "sample_data"
-MAX_UPLOAD_BYTES = 500 * 1024 * 1024
+MAX_UPLOAD_BYTES = 1024 * 1024 * 1024
 MAX_MULTIPART_OVERHEAD = 4 * 1024 * 1024
 SESSION_TTL_SEC = 4 * 60 * 60
 SESSION_ID_RE = re.compile(r"^[0-9a-fA-F-]{36}$")
@@ -174,7 +174,7 @@ class ScripturaHandler(SimpleHTTPRequestHandler):
                 self.close_connection = True
                 self.send_json_response({
                     "success": False,
-                    "error": "File is over 500 MB. Please upload a smaller recording."
+                    "error": "File is over 1 GB. Please upload a smaller recording."
                 }, status=413)
                 return
 
@@ -223,7 +223,7 @@ class ScripturaHandler(SimpleHTTPRequestHandler):
                         save_path.unlink(missing_ok=True)
                         self.send_json_response({
                             "success": False,
-                            "error": "File is over 500 MB. Please upload a smaller recording."
+                            "error": "File is over 1 GB. Please upload a smaller recording."
                         }, status=413)
                         return
                     out.write(chunk)
@@ -668,7 +668,7 @@ if __name__ == "__main__":
     os.chdir(BASE_DIR)
     server_address = ('', PORT)
     httpd = ThreadedHTTPServer(server_address, ScripturaHandler)
-    print(f"Studio running at http://localhost:{PORT} (uploads up to 500 MB, deleted when you finish or after 4 hours)")
+    print(f"Studio running at http://localhost:{PORT} (uploads up to 1 GB, deleted when you finish or after 4 hours)")
     try:
         httpd.serve_forever()
     except KeyboardInterrupt:

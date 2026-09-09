@@ -16,7 +16,7 @@ const AppState = {
   sessionId: null
 };
 
-const MAX_UPLOAD_BYTES = 500 * 1024 * 1024;
+const MAX_UPLOAD_BYTES = 1024 * 1024 * 1024;
 const SESSION_STORAGE_KEY = 'tga-work-session';
 
 const TAB_COPY = {
@@ -114,7 +114,7 @@ async function discardSessionFiles() {
     mediaContainer.innerHTML = `
       <div class="media-empty">
         <p>No recording loaded yet</p>
-        <small>Upload a file up to 500 MB. It will be deleted when you finish, or after 4 hours.</small>
+        <small>Upload a file up to 1 GB. It will be deleted when you finish, or after 4 hours.</small>
       </div>`;
   }
   const status = document.getElementById('media-status-label');
