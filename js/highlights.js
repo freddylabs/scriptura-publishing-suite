@@ -49,6 +49,17 @@ const HighlightsModule = {
     }
   },
 
+  resetForNewUpload() {
+    this.clips.forEach((clip) => {
+      if (clip.revokeOnClear && clip.url) URL.revokeObjectURL(clip.url);
+    });
+    this.clips = [];
+    this.segments = [];
+    this.clearSelection();
+    this.renderSelectableTranscript([]);
+    this.renderLibrary();
+  },
+
   onTabEnter() {
     if (AppState.currentTranscript?.transcription) {
       this.renderSelectableTranscript(AppState.currentTranscript.transcription);
@@ -431,6 +442,7 @@ const HighlightsModule = {
     const library = document.getElementById('clip-library');
     const stat = document.getElementById('clip-count-stat');
     if (stat) stat.textContent = `${this.clips.length} clip${this.clips.length === 1 ? '' : 's'}`;
+    if (typeof updateDashMeters === 'function') updateDashMeters();
     if (!library) return;
 
     if (!this.clips.length) {

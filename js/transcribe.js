@@ -51,7 +51,11 @@ const TranscribeModule = {
       return;
     }
 
-    showToast(`Loading ${file.name}…`, 'info');
+    showToast('Clearing the previous transcript so this file can upload…', 'info');
+    await prepareForNewUpload({ silent: true });
+    logActivity(`New upload: ${file.name}`);
+    showToast(`Workspace cleared. Loading ${file.name}…`, 'info');
+    setWorkspaceStatus('Loading new file');
 
     if (AppState.mediaObjectUrl) {
       URL.revokeObjectURL(AppState.mediaObjectUrl);
@@ -71,6 +75,8 @@ const TranscribeModule = {
 
     const status = document.getElementById('media-status-label');
     if (status) status.textContent = file.name.length > 22 ? `${file.name.slice(0, 20)}…` : file.name;
+    setWorkspaceStatus('Uploading');
+    updateDashMeters();
 
     this.bindMediaSync();
     HighlightsModule.attachSourceMedia(objectUrl, AppState.mediaIsVideo);
@@ -95,7 +101,10 @@ const TranscribeModule = {
         }
         if (progressLabel) progressLabel.textContent = 'On the server until you finish (or 4 hours)';
         if (progressBar) progressBar.style.width = '100%';
-        showToast(`${file.name} is ready. It will be deleted when you click Finish.`, 'success');
+        showToast(`${file.name} is ready. Transcribe it to replace any old lines.`, 'success');
+        logActivity('File is on the server. Ready to transcribe.');
+        setWorkspaceStatus('Ready to transcribe');
+        updateDashMeters();
       } else {
         throw new Error((data && data.error) || 'Upload failed');
       }
@@ -103,6 +112,8 @@ const TranscribeModule = {
       AppState.mediaFile = { filename: file.name, localOnly: true };
       if (progressLabel) progressLabel.textContent = 'Kept only in this browser tab';
       showToast(e.message || 'File is ready in this browser. Server upload was skipped.', 'info');
+      setWorkspaceStatus('File in this browser');
+      updateDashMeters();
     }
   },
 
@@ -138,38 +149,52 @@ const TranscribeModule = {
   },
 
   async runTranscription() {
+    if (!AppState.mediaFile && !AppState.mediaBlobUrl) {
+      showToast('Upload a recording first. The last transcript will stay cleared until this file is transcribed.', 'warning');
+      return;
+    }
+
     const runBtn = document.getElementById('btn-run-transcribe');
     if (runBtn) {
       runBtn.disabled = true;
       runBtn.textContent = 'Transcribing…';
     }
 
-    showToast('Transcribing with timestamps…', 'info');
+    showToast('Transcribing this file with timestamps…', 'info');
+    logActivity('Transcription started.');
 
     try {
       const res = await fetch('/api/transcribe', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Session-Id': getSessionId()
+        },
         body: JSON.stringify({
           filePath: AppState.mediaFile ? AppState.mediaFile.filePath : null,
           sessionId: getSessionId()
         })
       });
       const data = await res.json();
-      if (data.success && data.data) {
+      if (data.success && data.data && data.source !== 'preloaded_recording') {
         AppState.currentTranscript = data.data;
         this.renderTranscriptList(data.data.transcription);
-        showToast('Transcript is ready. Highlight lines in Clips to cut video.', 'success');
+        showToast('Transcript is ready for this file. Open Clips to cut moments.', 'success');
+        logActivity(`${data.data.transcription.length} timestamped lines ready.`);
+        setWorkspaceStatus('Transcript ready');
+        updateDashMeters();
+      } else if (data.success && data.source === 'preloaded_recording') {
+        showToast('The server did not receive this file. Try uploading again, then transcribe.', 'warning');
+        logActivity('Transcription skipped — no uploaded file on the server.');
+      } else {
+        showToast((data && data.error) || 'Transcription failed. Upload the file again.', 'warning');
       }
     } catch (e) {
-      showToast('Using the sample transcript so you can still explore selection.', 'info');
-      if (AppState.currentTranscript?.transcription) {
-        this.renderTranscriptList(AppState.currentTranscript.transcription);
-      }
+      showToast('Could not transcribe this file. Check the upload, then try again.', 'warning');
     } finally {
       if (runBtn) {
         runBtn.disabled = false;
-        runBtn.textContent = 'Transcribe with timestamps';
+        runBtn.textContent = 'Transcribe this file';
       }
     }
   },

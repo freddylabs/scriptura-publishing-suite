@@ -5,11 +5,12 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background: var(--bg-card);
-  border: 1px solid var(--border-subtle);
+  background: rgba(255, 255, 255, 0.58);
+  border: 1px solid rgba(255, 255, 255, 0.8);
   border-radius: var(--radius-md);
   padding: 0.85rem 1.5rem;
   margin-bottom: 2rem;
+  backdrop-filter: blur(var(--glass-blur));
 }
 
 .reader-theme-selector {
@@ -274,8 +275,8 @@
 }
 
 .service-card {
-  background: var(--bg-card);
-  border: 1px solid var(--border-subtle);
+  background: rgba(255, 255, 255, 0.58);
+  border: 1px solid rgba(255, 255, 255, 0.8);
   border-radius: var(--radius-md);
   padding: 1.75rem;
   display: flex;
@@ -284,6 +285,7 @@
   transition: all 0.25s ease;
   position: relative;
   overflow: hidden;
+  backdrop-filter: blur(var(--glass-blur));
 }
 
 .service-card:hover {

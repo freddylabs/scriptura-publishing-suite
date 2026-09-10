@@ -19,97 +19,108 @@
       <div class="brand-mark">
         <img src="assets/brand-logo.jpg" alt="The Gospel Appraisal and The Gospel Broadcasting Network" class="brand-logo">
       </div>
-      <p class="brand-copy">Clips &amp; manuscript studio</p>
+      <p class="brand-copy">TGA Studio</p>
     </div>
 
     <nav class="side-nav" id="main-nav-tabs">
+      <p class="nav-section">Media</p>
       <button class="nav-tab-btn active" data-tab="studio" id="tab-btn-studio">
-        <span class="nav-ico">1</span>
-        <span class="nav-copy">
-          <strong>Transcribe</strong>
-          <small>Upload and timestamps</small>
-        </span>
+        <span class="nav-ico nav-ico-blue">↑</span>
+        <span class="nav-copy"><strong>Studio</strong></span>
       </button>
       <button class="nav-tab-btn" data-tab="highlights" id="tab-btn-highlights">
-        <span class="nav-ico">2</span>
-        <span class="nav-copy">
-          <strong>Clips</strong>
-          <small>Select text, cut video</small>
-        </span>
+        <span class="nav-ico nav-ico-navy">▶</span>
+        <span class="nav-copy"><strong>Clips</strong></span>
       </button>
+      <p class="nav-section">Files</p>
       <button class="nav-tab-btn" data-tab="editor" id="tab-btn-editor">
-        <span class="nav-ico">3</span>
-        <span class="nav-copy">
-          <strong>Manuscript</strong>
-          <small>Proofread in your voice</small>
-        </span>
+        <span class="nav-ico nav-ico-gold">≡</span>
+        <span class="nav-copy"><strong>Manuscript</strong></span>
       </button>
       <button class="nav-tab-btn" data-tab="reader" id="tab-btn-reader">
-        <span class="nav-ico">4</span>
-        <span class="nav-copy">
-          <strong>Reader</strong>
-          <small>Page-by-page preview</small>
-        </span>
+        <span class="nav-ico nav-ico-green">▣</span>
+        <span class="nav-copy"><strong>Reader</strong></span>
       </button>
       <button class="nav-tab-btn" data-tab="cover" id="tab-btn-cover">
-        <span class="nav-ico">5</span>
-        <span class="nav-copy">
-          <strong>Cover</strong>
-          <small>Title and palette</small>
-        </span>
+        <span class="nav-ico nav-ico-rose">◇</span>
+        <span class="nav-copy"><strong>Cover</strong></span>
       </button>
+      <p class="nav-section">Share</p>
       <button class="nav-tab-btn" data-tab="services" id="tab-btn-services">
-        <span class="nav-ico">6</span>
-        <span class="nav-copy">
-          <strong>Publish</strong>
-          <small>Audio, print, shorts</small>
-        </span>
+        <span class="nav-ico nav-ico-purple">↗</span>
+        <span class="nav-copy"><strong>Publish</strong></span>
       </button>
     </nav>
 
-    <p class="sidebar-foot">A TGBN companion workspace</p>
+    <div class="sidebar-storage">
+      <p>Session storage</p>
+      <strong>Up to 1 GB · auto-clears</strong>
+    </div>
   </aside>
 
   <div class="app-shell">
     <header class="app-topbar">
-      <div>
-        <p class="topbar-kicker" id="topbar-kicker">Step 1 of 6</p>
+      <div class="topbar-titles">
+        <p class="topbar-kicker" id="topbar-kicker">Media / Studio</p>
         <h1 class="topbar-title" id="topbar-title">Upload &amp; transcribe</h1>
       </div>
+      <div class="topbar-search">
+        <input type="search" id="global-search" class="search-box" placeholder="Search transcript lines…">
+      </div>
       <div class="header-actions">
-        <button class="btn btn-secondary btn-sm" id="btn-finish-discard" type="button">Finish &amp; delete files</button>
-        <button class="btn btn-secondary btn-sm" id="btn-export-markdown">Export markdown</button>
+        <button class="btn btn-secondary btn-sm" id="btn-new-upload" type="button">New upload</button>
+        <button class="btn btn-secondary btn-sm" id="btn-finish-discard" type="button">Finish &amp; delete</button>
+        <button class="btn btn-secondary btn-sm" id="btn-export-markdown">Export .md</button>
         <button class="btn btn-primary btn-sm" id="btn-export-pdf">Print / PDF</button>
+        <div class="user-chip" title="This session stays on this device">
+          <span class="user-avatar">TG</span>
+          <span class="user-meta">
+            <strong>TGA Studio</strong>
+            <small>Local session</small>
+          </span>
+        </div>
       </div>
     </header>
 
     <main class="app-container">
 
       <section class="tab-view active" id="tab-studio">
-        <div class="hero-banner">
-          <div class="hero-content">
-            <span class="badge-tag">Sermons · lectures · recordings</span>
-            <h2 class="hero-title">From a recording to short clips and a readable book</h2>
-            <p class="hero-subtitle">
-              Upload a video, then highlight lines in the timestamped transcript. Those times become the in and out points for short clips. When you are ready, we tidy the spoken words into chapters that still sound like the speaker — not like a generated essay.
-            </p>
-            <div class="hero-stats">
-              <div class="stat-item">
-                <span class="stat-value" id="transcript-segment-count">—</span>
-                <span class="stat-label">Transcript lines</span>
-              </div>
-              <div class="stat-item">
-                <span class="stat-value" id="media-status-label">No file yet</span>
-                <span class="stat-label">Source video</span>
-              </div>
-              <div class="stat-item">
-                <span class="stat-value" id="clip-count-stat">0 clips</span>
-                <span class="stat-label">Cut from this file</span>
-              </div>
+        <div class="dash-stats">
+          <article class="stat-card">
+            <span class="stat-ico stat-ico-blue">☰</span>
+            <div>
+              <p class="stat-label">Transcript lines</p>
+              <strong class="stat-value" id="transcript-segment-count">0</strong>
+              <span class="stat-bar"><i class="stat-bar-fill is-blue" id="stat-bar-lines"></i></span>
             </div>
-          </div>
+          </article>
+          <article class="stat-card">
+            <span class="stat-ico stat-ico-navy">▶</span>
+            <div>
+              <p class="stat-label">Source file</p>
+              <strong class="stat-value" id="media-status-label">No file yet</strong>
+              <span class="stat-bar"><i class="stat-bar-fill is-navy" id="stat-bar-file"></i></span>
+            </div>
+          </article>
+          <article class="stat-card">
+            <span class="stat-ico stat-ico-gold">✂</span>
+            <div>
+              <p class="stat-label">Clips cut</p>
+              <strong class="stat-value" id="clip-count-stat">0 clips</strong>
+              <span class="stat-bar"><i class="stat-bar-fill is-gold" id="stat-bar-clips"></i></span>
+            </div>
+          </article>
+          <article class="stat-card">
+            <span class="stat-ico stat-ico-green">●</span>
+            <div>
+              <p class="stat-label">Workspace</p>
+              <strong class="stat-value" id="workspace-status-label">Ready for a new file</strong>
+              <span class="stat-bar"><i class="stat-bar-fill is-green" id="stat-bar-workspace"></i></span>
+            </div>
+          </article>
         </div>
 
+        <div class="dash-body">
         <div class="studio-grid">
           <div class="studio-left-col">
             <div class="glass-card">
@@ -138,13 +149,13 @@
               <div class="media-preview-container" id="media-player-container">
                 <div class="media-empty">
                   <p>No recording loaded yet</p>
-                  <small>A sample transcript is available so you can explore the workspace. Upload your own video when you want real clips.</small>
+                  <small>Upload a file up to 1 GB. Any previous transcript is cleared first so the new recording can take its place.</small>
                 </div>
               </div>
 
               <div class="card-actions">
                 <button class="btn btn-primary" id="btn-run-transcribe">
-                  Transcribe with timestamps
+                  Transcribe this file
                 </button>
               </div>
             </div>
@@ -163,9 +174,19 @@
                   <button class="btn btn-secondary btn-sm" id="btn-export-txt">TXT</button>
                 </div>
               </div>
-              <div class="transcript-feed" id="transcript-feed"></div>
+              <div class="transcript-feed" id="transcript-feed">
+                <div class="empty-panel">Upload a recording, then transcribe. Any previous transcript is cleared first.</div>
+              </div>
             </div>
           </div>
+        </div>
+
+        <aside class="activity-rail glass-card">
+          <div class="card-header">
+            <h3 class="card-title">Activity</h3>
+          </div>
+          <ul class="activity-feed" id="activity-feed"></ul>
+        </aside>
         </div>
 
         <div class="transform-bar">

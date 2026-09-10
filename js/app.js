@@ -20,24 +20,27 @@ const MAX_UPLOAD_BYTES = 1024 * 1024 * 1024;
 const SESSION_STORAGE_KEY = 'tga-work-session';
 
 const TAB_COPY = {
-  studio: { kicker: 'Step 1 of 6', title: 'Upload & transcribe' },
-  highlights: { kicker: 'Step 2 of 6', title: 'Select text, cut clips' },
-  editor: { kicker: 'Step 3 of 6', title: 'Manuscript in your voice' },
-  reader: { kicker: 'Step 4 of 6', title: 'Read the spread' },
-  cover: { kicker: 'Step 5 of 6', title: 'Cover' },
-  services: { kicker: 'Step 6 of 6', title: 'Publish' }
+  studio: { kicker: 'Media / Studio', title: 'Upload & transcribe' },
+  highlights: { kicker: 'Media / Clips', title: 'Select text, cut clips' },
+  editor: { kicker: 'Files / Manuscript', title: 'Manuscript in your voice' },
+  reader: { kicker: 'Files / Reader', title: 'Read the spread' },
+  cover: { kicker: 'Files / Cover', title: 'Cover' },
+  services: { kicker: 'Share / Publish', title: 'Publish' }
 };
 
 document.addEventListener('DOMContentLoaded', async () => {
   getSessionId();
   initNavigation();
   initFinishButton();
-  await loadInitialShowcaseData();
+  initNewUploadButton();
+  initGlobalSearch();
   TranscribeModule.init();
   HighlightsModule.init();
   TransformerModule.init();
   BookViewerModule.init();
   ExportModule.init();
+  resetWorkspace({ silent: true });
+  logActivity('Workspace is clear. Upload a recording to begin.');
 });
 
 function getSessionId() {
@@ -72,11 +75,31 @@ function initFinishButton() {
   btn.addEventListener('click', async () => {
     const ok = window.confirm('Delete your uploaded recording and server clips from this session? Downloads already on your computer are kept.');
     if (!ok) return;
-    await discardSessionFiles();
+    await prepareForNewUpload({ silent: true });
+    showToast('Your recording was deleted from the server.', 'success');
+    logActivity('Session files discarded.');
+  });
+}
+
+function initNewUploadButton() {
+  const btn = document.getElementById('btn-new-upload');
+  if (!btn) return;
+  btn.addEventListener('click', async () => {
+    await prepareForNewUpload({ silent: true });
+    showToast('Workspace cleared. Upload a new audio or video file.', 'info');
+    logActivity('Started a new upload.');
+    const fileInput = document.getElementById('media-file-input');
+    if (fileInput) fileInput.click();
   });
 }
 
 async function discardSessionFiles() {
+  await prepareForNewUpload({ silent: true });
+  showToast('Your recording was deleted from the server.', 'success');
+  logActivity('Session files discarded.');
+}
+
+async function prepareForNewUpload(opts = {}) {
   const sessionId = getSessionId();
   try {
     await fetch('/api/discard', {
@@ -99,30 +122,118 @@ async function discardSessionFiles() {
   AppState.mediaBlobUrl = null;
   AppState.mediaObjectUrl = null;
   AppState.mediaIsVideo = false;
-
-  if (typeof HighlightsModule !== 'undefined') {
-    HighlightsModule.clips.forEach((clip) => {
-      if (clip.revokeOnClear && clip.url) URL.revokeObjectURL(clip.url);
-    });
-    HighlightsModule.clips = [];
-    HighlightsModule.renderLibrary();
-    HighlightsModule.attachSourceMedia('', false);
-  }
+  AppState.currentBook = null;
 
   const mediaContainer = document.getElementById('media-player-container');
   if (mediaContainer) {
     mediaContainer.innerHTML = `
       <div class="media-empty">
         <p>No recording loaded yet</p>
-        <small>Upload a file up to 1 GB. It will be deleted when you finish, or after 4 hours.</small>
+        <small>Upload a file up to 1 GB. Any previous transcript is cleared first so the new recording can take its place.</small>
       </div>`;
   }
   const status = document.getElementById('media-status-label');
   if (status) status.textContent = 'No file yet';
   const progress = document.getElementById('upload-progress');
   if (progress) progress.hidden = true;
+  const progressBar = document.getElementById('upload-progress-bar');
+  if (progressBar) progressBar.style.width = '0%';
 
-  showToast('Your recording was deleted from the server.', 'success');
+  if (typeof HighlightsModule !== 'undefined' && HighlightsModule.attachSourceMedia) {
+    HighlightsModule.attachSourceMedia('', false);
+  }
+
+  resetWorkspace({ silent: true });
+  setWorkspaceStatus('Ready for a new file');
+  updateDashMeters();
+
+  if (!opts.silent) {
+    showToast('Previous transcript cleared. You can upload a new file.', 'info');
+    logActivity('Previous transcript cleared.');
+  }
+}
+
+function resetWorkspace(opts = {}) {
+  AppState.currentTranscript = null;
+  AppState.currentBook = null;
+  AppState.activeChapterIndex = 0;
+  AppState.readerCurrentPage = 0;
+
+  const emptyCopy = 'Upload a recording, then transcribe. Any previous transcript is cleared first.';
+  const feed = document.getElementById('transcript-feed');
+  if (feed) feed.innerHTML = `<div class="empty-panel">${emptyCopy}</div>`;
+
+  const count = document.getElementById('transcript-segment-count');
+  if (count) count.textContent = '0';
+
+  const search = document.getElementById('transcript-search');
+  if (search) search.value = '';
+
+  const globalSearch = document.getElementById('global-search');
+  if (globalSearch) globalSearch.value = '';
+
+  const fileInput = document.getElementById('media-file-input');
+  if (fileInput) fileInput.value = '';
+
+  const rawPane = document.getElementById('editor-raw-pane');
+  const prosePane = document.getElementById('editor-prose-pane');
+  const chapterList = document.getElementById('chapter-nav-list');
+  if (rawPane) rawPane.innerHTML = '';
+  if (prosePane) prosePane.innerHTML = '';
+  if (chapterList) chapterList.innerHTML = '';
+
+  if (typeof HighlightsModule !== 'undefined' && HighlightsModule.resetForNewUpload) {
+    HighlightsModule.resetForNewUpload();
+  }
+
+  setWorkspaceStatus('Ready for a new file');
+  updateDashMeters();
+
+  if (!opts.silent) {
+    showToast('Previous transcript cleared. You can upload a new file.', 'info');
+    logActivity('Previous transcript cleared.');
+  }
+}
+
+function setWorkspaceStatus(text) {
+  const status = document.getElementById('workspace-status-label');
+  if (status) status.textContent = text;
+}
+
+function updateDashMeters() {
+  const lines = Number(String(document.getElementById('transcript-segment-count')?.textContent || '0').replace(/\D/g, '')) || 0;
+  const hasFile = Boolean(AppState.mediaFile || AppState.mediaBlobUrl);
+  const clips = (typeof HighlightsModule !== 'undefined' && HighlightsModule.clips) ? HighlightsModule.clips.length : 0;
+  const setWidth = (id, pct) => {
+    const el = document.getElementById(id);
+    if (el) el.style.width = `${Math.max(6, Math.min(100, pct))}%`;
+  };
+  setWidth('stat-bar-lines', lines ? Math.min(100, 12 + lines * 2) : 6);
+  setWidth('stat-bar-file', hasFile ? 100 : 6);
+  setWidth('stat-bar-clips', clips ? Math.min(100, 18 + clips * 14) : 6);
+  setWidth('stat-bar-workspace', hasFile ? (lines ? 100 : 55) : 12);
+}
+
+function logActivity(text) {
+  const feed = document.getElementById('activity-feed');
+  if (!feed) return;
+  const item = document.createElement('li');
+  const now = new Date();
+  item.innerHTML = `<span>${text}</span><time>${now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</time>`;
+  feed.prepend(item);
+  while (feed.children.length > 8) feed.lastElementChild.remove();
+}
+
+function initGlobalSearch() {
+  const globalSearch = document.getElementById('global-search');
+  const lineSearch = document.getElementById('transcript-search');
+  if (!globalSearch) return;
+  globalSearch.addEventListener('input', () => {
+    if (lineSearch) {
+      lineSearch.value = globalSearch.value;
+      lineSearch.dispatchEvent(new Event('input'));
+    }
+  });
 }
 
 function initNavigation() {
@@ -161,22 +272,8 @@ function switchTab(tabId) {
   }
 }
 
-async function loadInitialShowcaseData() {
-  try {
-    const transRes = await fetch('/api/sample-transcript');
-    if (transRes.ok) {
-      AppState.currentTranscript = await transRes.json();
-      TranscribeModule.renderTranscriptList(AppState.currentTranscript.transcription);
-    }
-
-    const bookRes = await fetch('/api/sample-book');
-    if (bookRes.ok) {
-      AppState.currentBook = await bookRes.json();
-      TransformerModule.populateBookMetadata();
-    }
-  } catch (err) {
-    console.warn('Could not fetch sample data from the server:', err);
-  }
+function loadInitialShowcaseData() {
+  // Kept for compatibility. The workspace now starts empty so a new upload is never blocked by leftover sample text.
 }
 
 function showToast(message, type = 'info') {

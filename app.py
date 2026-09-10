@@ -278,17 +278,11 @@ class ScripturaHandler(SimpleHTTPRequestHandler):
             if valid_session_id(session_id):
                 touch_session(session_id)
 
-            if not input_path or not Path(input_path).exists():
-                # If no custom file provided, use the pre-transcribed 801-segment dataset
-                json_path = BASE_DIR / "Screen_Recording_2026-09-07_transcript.json"
-                with open(json_path, "r", encoding="utf-8") as f:
-                    data = json.load(f)
+            if not input_path or not Path(input_path).exists() or not path_is_inside(input_path, UPLOAD_DIR):
                 self.send_json_response({
-                    "success": True,
-                    "status": "completed",
-                    "source": "preloaded_recording",
-                    "data": data
-                })
+                    "success": False,
+                    "error": "Upload a recording first. The previous transcript is not reused."
+                }, status=400)
                 return
 
             work_dir = session_path(session_id) if valid_session_id(session_id) else UPLOAD_DIR
