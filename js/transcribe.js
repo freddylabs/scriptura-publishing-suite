@@ -47,7 +47,7 @@ const TranscribeModule = {
 
   async handleFileUpload(file) {
     if (file.size > MAX_UPLOAD_BYTES) {
-      showToast('That file is over 1 GB. Please compress it or upload a shorter recording.', 'warning');
+      showToast('That file is over 2 GB. Please compress it or upload a shorter recording.', 'warning');
       return;
     }
 

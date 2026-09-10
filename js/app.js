@@ -16,7 +16,7 @@ const AppState = {
   sessionId: null
 };
 
-const MAX_UPLOAD_BYTES = 1024 * 1024 * 1024;
+const MAX_UPLOAD_BYTES = 2 * 1024 * 1024 * 1024;
 const SESSION_STORAGE_KEY = 'tga-work-session';
 
 const TAB_COPY = {
@@ -129,7 +129,7 @@ async function prepareForNewUpload(opts = {}) {
     mediaContainer.innerHTML = `
       <div class="media-empty">
         <p>No recording loaded yet</p>
-        <small>Upload a file up to 1 GB. Any previous transcript is cleared first so the new recording can take its place.</small>
+        <small>Upload a file up to 2 GB. Any previous transcript is cleared first so the new recording can take its place.</small>
       </div>`;
   }
   const status = document.getElementById('media-status-label');
